@@ -55,6 +55,7 @@ const loadedItems = ref<TechNewsItem[]>([]);
 const currentPage = ref(0);
 const totalPages = ref(0);
 const totalItems = ref(0);
+const activeFeedItem = ref<TechNewsItem | null>(null);
 const isLoadingMore = ref(false);
 const isRefreshing = ref(false);
 const spotlightIndex = ref(0);
@@ -134,11 +135,15 @@ const formatRelativeDate = (value: string) => {
   return rtf.format(Math.round(diffInHours / 24), "day");
 };
 
-const summarize = (value: string) => {
-  const strippedValue = value
+const getDescriptionText = (value: string) => {
+  return value
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+};
+
+const summarize = (value: string) => {
+  const strippedValue = getDescriptionText(value);
 
   if (!strippedValue) {
     return "Summary unavailable, but the original article is ready to open.";
@@ -153,6 +158,10 @@ const summarize = (value: string) => {
 
 const formatSource = (value: string) => {
   return value.replace(/^www\./, "");
+};
+
+const getCountryLabel = (item: TechNewsItem) => {
+  return item.country ?? "Country unresolved";
 };
 
 const syncResponse = (response: TechNewsResponse, mode: "replace" | "append" = "replace") => {
@@ -300,6 +309,14 @@ const openItemCountry = (item: TechNewsItem) => {
   setCountrySpotlight(item.country);
 };
 
+const openFeedItem = (item: TechNewsItem) => {
+  activeFeedItem.value = item;
+};
+
+const closeFeedItem = () => {
+  activeFeedItem.value = null;
+};
+
 const loadMore = async () => {
   if (isLoadingMore.value || !hasMore.value) {
     return;
@@ -360,7 +377,15 @@ useIntervalFn(() => {
   }
 
   spotlightIndex.value = (spotlightIndex.value + 1) % countryGroups.value.length;
-}, 5200);
+}, 5_200); // Set to just over 5 seconds to allow for the fade animation to complete before switching to the next country
+
+useEventListener(document, "keydown", (event: KeyboardEvent) => {
+  if (event.key !== "Escape" || !activeFeedItem.value) {
+    return;
+  }
+
+  closeFeedItem();
+});
 
 watch(
   countryGroups,
@@ -601,8 +626,13 @@ watch(
           <article
             v-for="item in visibleItems"
             :key="item.link"
-            class="group rounded-[1.35rem] border border-white/8 bg-white/3 p-3.5 transition hover:border-cyan-300/30 hover:bg-cyan-300/5"
+            class="group cursor-pointer rounded-[1.35rem] border border-white/8 bg-white/3 p-3.5 transition hover:border-cyan-300/30 hover:bg-cyan-300/5"
+            tabindex="0"
+            role="button"
             @mouseenter="previewItem(item)"
+            @click="openFeedItem(item)"
+            @keydown.enter.prevent="openFeedItem(item)"
+            @keydown.space.prevent="openFeedItem(item)"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="space-y-2.5">
@@ -623,6 +653,7 @@ watch(
                   target="_blank"
                   rel="noreferrer noopener"
                   class="block text-[15px] font-medium leading-5.5 text-white transition group-hover:text-cyan-100"
+                  @click.stop
                 >
                   {{ item.title }}
                 </a>
@@ -640,7 +671,7 @@ watch(
                   v-if="item.country"
                   type="button"
                   class="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-right text-xs text-slate-200 transition hover:border-cyan-300/30 hover:text-cyan-100"
-                  @click="openItemCountry(item)"
+                  @click.stop="openItemCountry(item)"
                 >
                   {{ item.country }}
                 </button>
@@ -653,6 +684,16 @@ watch(
               <span>{{ item.countryDetails.method }}</span>
               <span class="h-1 w-1 rounded-full bg-slate-600" />
               <span>{{ item.countryDetails.confidence }} confidence</span>
+            </div>
+
+            <div
+              class="mt-3 flex items-center justify-between gap-3 border-t border-white/8 pt-2 text-[11px] text-slate-400"
+            >
+              <span>Open full dispatch</span>
+              <span class="inline-flex items-center gap-1 text-cyan-100/80">
+                <Icon name="mdi:arrow-top-right" class="size-3.5" />
+                Details
+              </span>
             </div>
           </article>
 
@@ -690,4 +731,134 @@ watch(
       </div>
     </aside>
   </section>
+
+  <Teleport to="body">
+    <div
+      v-if="activeFeedItem"
+      class="fixed inset-0 z-120 flex items-end justify-center bg-slate-950/72 p-3 backdrop-blur-sm sm:items-center sm:p-6"
+      @click.self="closeFeedItem"
+    >
+      <div
+        class="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-4xl border border-white/10 bg-[linear-gradient(180deg,rgba(7,14,24,0.98),rgba(6,11,19,0.96))] shadow-[0_30px_90px_rgba(2,6,23,0.6)]"
+      >
+        <div
+          class="flex items-start justify-between gap-4 border-b border-white/10 px-4 py-4 sm:px-5"
+        >
+          <div class="space-y-2">
+            <p class="text-[11px] font-medium uppercase tracking-[0.3em] text-cyan-200/70">
+              Feed details
+            </p>
+            <h3 class="text-lg font-semibold leading-tight text-white sm:text-xl">
+              {{ activeFeedItem.title }}
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            class="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200 transition hover:border-cyan-300/35 hover:text-cyan-100"
+            @click="closeFeedItem"
+          >
+            <Icon name="mdi:close" class="size-4" />
+          </button>
+        </div>
+
+        <div class="overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
+          <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-300/80">
+            <span
+              class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1"
+            >
+              <Icon name="mdi:radio-tower" class="size-3.5" />
+              {{ formatSource(activeFeedItem.sourceHost) }}
+            </span>
+            <span
+              class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1"
+            >
+              <Icon name="mdi:earth" class="size-3.5" />
+              {{ getCountryLabel(activeFeedItem) }}
+            </span>
+            <span
+              class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1"
+            >
+              <Icon name="mdi:star-four-points-outline" class="size-3.5" />
+              Signal {{ activeFeedItem.score }}
+            </span>
+            <span
+              class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1"
+            >
+              <Icon name="mdi:clock-outline" class="size-3.5" />
+              {{ formatAbsoluteDate(activeFeedItem.pubDate) }}
+            </span>
+          </div>
+
+          <div class="mt-4 grid gap-3 sm:grid-cols-3">
+            <div class="rounded-2xl border border-white/8 bg-white/4 p-3">
+              <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Method</p>
+              <p class="mt-2 text-[13px] font-medium text-white">
+                {{ activeFeedItem.countryDetails.method }}
+              </p>
+            </div>
+            <div class="rounded-2xl border border-white/8 bg-white/4 p-3">
+              <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Confidence</p>
+              <p class="mt-2 text-[13px] font-medium text-white">
+                {{ activeFeedItem.countryDetails.confidence }}
+              </p>
+            </div>
+            <div class="rounded-2xl border border-white/8 bg-white/4 p-3">
+              <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Publisher</p>
+              <p class="mt-2 text-[13px] font-medium text-white">
+                {{ activeFeedItem.source }}
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-4 rounded-3xl border border-white/8 bg-white/3 p-4">
+            <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Dispatch</p>
+            <p class="mt-3 text-[14px] leading-6 text-slate-200/85">
+              {{
+                getDescriptionText(activeFeedItem.description) ||
+                "No additional description is available for this item."
+              }}
+            </p>
+          </div>
+
+          <div class="mt-4 rounded-3xl border border-white/8 bg-white/3 p-4">
+            <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Country hint</p>
+            <p class="mt-3 text-[13px] leading-5 text-slate-300/80">
+              {{
+                activeFeedItem.countryDetails.hint ||
+                "No country hint was supplied for this dispatch."
+              }}
+            </p>
+          </div>
+        </div>
+
+        <div
+          class="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-4 py-4 sm:px-5"
+        >
+          <p class="text-[11px] text-slate-400">Press Escape or click outside to close.</p>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              v-if="activeFeedItem.country"
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] text-slate-200 transition hover:border-cyan-300/35 hover:text-cyan-100"
+              @click="openItemCountry(activeFeedItem)"
+            >
+              <Icon name="mdi:crosshairs-gps" class="size-3.5" />
+              Spotlight {{ activeFeedItem.country }}
+            </button>
+            <a
+              :href="activeFeedItem.link"
+              target="_blank"
+              rel="noreferrer noopener"
+              class="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5 text-[11px] font-medium text-cyan-50 transition hover:border-cyan-300/45 hover:bg-cyan-300/15"
+            >
+              <Icon name="mdi:open-in-new" class="size-3.5" />
+              Open original article
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
