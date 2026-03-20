@@ -28,6 +28,7 @@
     "@nuxt/image": "^2.0.0",
     "@pinia/nuxt": "^0.11.3",
     "@types/node": "^25.2.0",
+    "@types/sanitize-html": "^2.16.1",
     "@vueuse/core": "^14.2.0",
     "@vueuse/nuxt": "^14.2.0",
     "baseline-browser-mapping": "^2.9.19",
@@ -44,6 +45,7 @@
     "@tailwindcss/vite": "^4.1.18",
     "@vueuse/nuxt": "^14.2.0",
     "pinia": "^3.0.4",
+    "sanitize-html": "^2.17.2",
     "tailwindcss": "^4.1.18"
   },
   "resolutions": {

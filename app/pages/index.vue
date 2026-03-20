@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import sanitizeHtml from "sanitize-html";
 import { countries } from "~/utils/countries.utils";
 
 type CountryInferenceConfidence = "high" | "medium" | "low";
@@ -142,6 +143,44 @@ const getDescriptionText = (value: string) => {
     .trim();
 };
 
+const renderDescriptionHtml = (value: string) => {
+  const sanitizedValue = sanitizeHtml(value, {
+    allowedTags: [
+      "p",
+      "br",
+      "strong",
+      "em",
+      "b",
+      "i",
+      "ul",
+      "ol",
+      "li",
+      "blockquote",
+      "code",
+      "pre",
+      "a",
+    ],
+    allowedAttributes: {
+      a: ["href", "target", "rel"],
+    },
+    allowedSchemes: ["http", "https", "mailto"],
+    transformTags: {
+      a: sanitizeHtml.simpleTransform("a", {
+        target: "_blank",
+        rel: "noreferrer noopener",
+      }),
+    },
+  }).trim();
+
+  if (sanitizedValue) {
+    return sanitizedValue;
+  }
+
+  const textFallback = getDescriptionText(value);
+
+  return textFallback ? `<p>${sanitizeHtml(textFallback)}</p>` : "";
+};
+
 const summarize = (value: string) => {
   const strippedValue = getDescriptionText(value);
 
@@ -163,6 +202,30 @@ const formatSource = (value: string) => {
 const getCountryLabel = (item: TechNewsItem) => {
   return item.country ?? "Country unresolved";
 };
+
+const descriptionContentClass =
+  "mt-3 space-y-4 text-[14px] leading-7 text-slate-200/85 [&_a]:font-medium [&_a]:text-cyan-200 [&_a]:underline [&_a]:decoration-cyan-300/45 [&_a]:underline-offset-4 [&_blockquote]:border-l-2 [&_blockquote]:border-cyan-300/35 [&_blockquote]:bg-cyan-300/5 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:italic [&_blockquote]:text-slate-100/90 [&_code]:rounded-md [&_code]:bg-slate-900/90 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[13px] [&_em]:text-cyan-50/90 [&_li]:marker:text-cyan-200/70 [&_ol]:my-4 [&_ol]:space-y-2 [&_ol]:pl-5 [&_p]:my-0 [&_pre]:overflow-x-auto [&_pre]:rounded-2xl [&_pre]:border [&_pre]:border-white/8 [&_pre]:bg-slate-950/85 [&_pre]:p-4 [&_pre]:text-[13px] [&_strong]:font-semibold [&_strong]:text-white [&_ul]:my-4 [&_ul]:space-y-2 [&_ul]:pl-5";
+
+const RichFeedHtml = defineComponent({
+  name: "RichFeedHtml",
+  props: {
+    html: {
+      type: String,
+      required: true,
+    },
+  },
+  setup(props) {
+    return () => h("div", { class: descriptionContentClass, innerHTML: props.html });
+  },
+});
+
+const activeFeedItemDescriptionHtml = computed(() => {
+  if (!activeFeedItem.value) {
+    return "";
+  }
+
+  return renderDescriptionHtml(activeFeedItem.value.description);
+});
 
 const syncResponse = (response: TechNewsResponse, mode: "replace" | "append" = "replace") => {
   loadedItems.value = mode === "append" ? [...loadedItems.value, ...response.data] : response.data;
@@ -813,11 +876,12 @@ watch(
 
           <div class="mt-4 rounded-3xl border border-white/8 bg-white/3 p-4">
             <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Dispatch</p>
-            <p class="mt-3 text-[14px] leading-6 text-slate-200/85">
-              {{
-                getDescriptionText(activeFeedItem.description) ||
-                "No additional description is available for this item."
-              }}
+            <RichFeedHtml
+              v-if="activeFeedItemDescriptionHtml"
+              :html="activeFeedItemDescriptionHtml"
+            />
+            <p v-else class="mt-3 text-[14px] leading-6 text-slate-200/85">
+              No additional description is available for this item.
             </p>
           </div>
 
