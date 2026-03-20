@@ -181,6 +181,36 @@ const renderDescriptionHtml = (value: string) => {
   return textFallback ? `<p>${sanitizeHtml(textFallback)}</p>` : "";
 };
 
+const renderPreviewHtml = (value: string) => {
+  const sanitizedValue = sanitizeHtml(value, {
+    allowedTags: ["p", "br", "strong", "em", "b", "i", "a"],
+    allowedAttributes: {
+      a: ["href", "target", "rel"],
+    },
+    allowedSchemes: ["http", "https", "mailto"],
+    transformTags: {
+      a: sanitizeHtml.simpleTransform("a", {
+        target: "_blank",
+        rel: "noreferrer noopener",
+      }),
+      p: (_tagName, attribs) => ({
+        tagName: "p",
+        attribs,
+      }),
+    },
+  })
+    .replace(/<p>\s*<\/p>/g, "")
+    .trim();
+
+  if (sanitizedValue) {
+    return sanitizedValue;
+  }
+
+  const textFallback = summarize(value);
+
+  return textFallback ? `<p>${sanitizeHtml(textFallback)}</p>` : "";
+};
+
 const summarize = (value: string) => {
   const strippedValue = getDescriptionText(value);
 
@@ -206,16 +236,27 @@ const getCountryLabel = (item: TechNewsItem) => {
 const descriptionContentClass =
   "mt-3 space-y-4 text-[14px] leading-7 text-slate-200/85 [&_a]:font-medium [&_a]:text-cyan-200 [&_a]:underline [&_a]:decoration-cyan-300/45 [&_a]:underline-offset-4 [&_blockquote]:border-l-2 [&_blockquote]:border-cyan-300/35 [&_blockquote]:bg-cyan-300/5 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:italic [&_blockquote]:text-slate-100/90 [&_code]:rounded-md [&_code]:bg-slate-900/90 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[13px] [&_em]:text-cyan-50/90 [&_li]:marker:text-cyan-200/70 [&_ol]:my-4 [&_ol]:space-y-2 [&_ol]:pl-5 [&_p]:my-0 [&_pre]:overflow-x-auto [&_pre]:rounded-2xl [&_pre]:border [&_pre]:border-white/8 [&_pre]:bg-slate-950/85 [&_pre]:p-4 [&_pre]:text-[13px] [&_strong]:font-semibold [&_strong]:text-white [&_ul]:my-4 [&_ul]:space-y-2 [&_ul]:pl-5";
 
-const RichFeedHtml = defineComponent({
-  name: "RichFeedHtml",
+const cardPreviewContentClass =
+  "text-[12px] leading-4.5 text-slate-300/78 max-h-[3.6rem] overflow-hidden [&_a]:font-medium [&_a]:text-cyan-100/90 [&_a]:underline [&_a]:decoration-cyan-300/35 [&_a]:underline-offset-2 [&_em]:text-slate-100/90 [&_p]:m-0 [&_p:not(:first-child)]:hidden [&_strong]:font-semibold [&_strong]:text-white";
+
+const HtmlContent = defineComponent({
+  name: "HtmlContent",
   props: {
     html: {
       type: String,
       required: true,
     },
+    variant: {
+      type: String as PropType<"detail" | "preview">,
+      default: "detail",
+    },
   },
   setup(props) {
-    return () => h("div", { class: descriptionContentClass, innerHTML: props.html });
+    return () =>
+      h("div", {
+        class: props.variant === "preview" ? cardPreviewContentClass : descriptionContentClass,
+        innerHTML: props.html,
+      });
   },
 });
 
@@ -226,6 +267,10 @@ const activeFeedItemDescriptionHtml = computed(() => {
 
   return renderDescriptionHtml(activeFeedItem.value.description);
 });
+
+const getPreviewHtml = (item: TechNewsItem) => {
+  return renderPreviewHtml(item.description);
+};
 
 const syncResponse = (response: TechNewsResponse, mode: "replace" | "append" = "replace") => {
   loadedItems.value = mode === "append" ? [...loadedItems.value, ...response.data] : response.data;
@@ -535,60 +580,98 @@ watch(
           <div
             class="pointer-events-auto rounded-3xl border border-white/10 bg-slate-950/65 p-4 shadow-[0_15px_45px_rgba(2,6,23,0.42)] backdrop-blur-md"
           >
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <p class="text-[11px] font-medium uppercase tracking-[0.3em] text-cyan-200/70">
-                  Now orbiting
-                </p>
-                <p class="mt-1.5 text-base font-semibold text-white">
-                  {{ spotlightGroup?.country ?? "Loading live dispatches" }}
-                </p>
+            <div
+              v-if="spotlightStory"
+              class="cursor-pointer rounded-2xl transition hover:bg-white/3 focus:outline-none"
+              tabindex="0"
+              role="button"
+              @click="openFeedItem(spotlightStory)"
+              @keydown.enter.prevent="openFeedItem(spotlightStory)"
+              @keydown.space.prevent="openFeedItem(spotlightStory)"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-[11px] font-medium uppercase tracking-[0.3em] text-cyan-200/70">
+                    Now orbiting
+                  </p>
+                  <p class="mt-1.5 text-base font-semibold text-white">
+                    {{ spotlightGroup?.country ?? "Loading live dispatches" }}
+                  </p>
+                </div>
+
+                <div
+                  v-if="spotlightGroup"
+                  class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-200/80"
+                >
+                  {{ spotlightGroup.count }} stories
+                </div>
+              </div>
+
+              <div class="mt-4 space-y-3">
+                <a
+                  :href="spotlightStory.link"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  class="block text-lg font-medium leading-tight text-white transition hover:text-cyan-200"
+                  @click.stop
+                >
+                  {{ spotlightStory.title }}
+                </a>
+
+                <HtmlContent :html="getPreviewHtml(spotlightStory)" variant="preview" />
+
+                <div class="flex flex-wrap items-center gap-2 text-xs text-slate-300/70">
+                  <span class="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1">
+                    <Icon name="mdi:radio-tower" class="size-3.5" />
+                    {{ formatSource(spotlightStory.sourceHost) }}
+                  </span>
+                  <span class="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1">
+                    <Icon name="mdi:clock-outline" class="size-3.5" />
+                    {{ formatRelativeDate(spotlightStory.pubDate) }}
+                  </span>
+                  <span class="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1">
+                    <Icon name="mdi:star-four-points-outline" class="size-3.5" />
+                    Signal {{ spotlightStory.score }}
+                  </span>
+                </div>
+
+                <div
+                  class="flex items-center justify-between gap-3 border-t border-white/8 pt-2 text-[11px] text-slate-400"
+                >
+                  <span>Open dispatch details</span>
+                  <span class="inline-flex items-center gap-1 text-cyan-100/80">
+                    <Icon name="mdi:arrow-top-right" class="size-3.5" />
+                    Details
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div v-else>
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-[11px] font-medium uppercase tracking-[0.3em] text-cyan-200/70">
+                    Now orbiting
+                  </p>
+                  <p class="mt-1.5 text-base font-semibold text-white">
+                    {{ spotlightGroup?.country ?? "Loading live dispatches" }}
+                  </p>
+                </div>
+
+                <div
+                  v-if="spotlightGroup"
+                  class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-200/80"
+                >
+                  {{ spotlightGroup.count }} stories
+                </div>
               </div>
 
               <div
-                v-if="spotlightGroup"
-                class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-200/80"
+                class="mt-4 rounded-2xl border border-dashed border-white/10 px-4 py-6 text-[13px] text-slate-300/70"
               >
-                {{ spotlightGroup.count }} stories
+                News is being collected. As soon as the first source resolves, the spotlight card
+                will update.
               </div>
-            </div>
-
-            <div v-if="spotlightStory" class="mt-4 space-y-3">
-              <a
-                :href="spotlightStory.link"
-                target="_blank"
-                rel="noreferrer noopener"
-                class="block text-lg font-medium leading-tight text-white transition hover:text-cyan-200"
-              >
-                {{ spotlightStory.title }}
-              </a>
-
-              <p class="text-[13px] leading-5 text-slate-300/80">
-                {{ summarize(spotlightStory.description) }}
-              </p>
-
-              <div class="flex flex-wrap items-center gap-3 text-xs text-slate-300/70">
-                <span class="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1">
-                  <Icon name="mdi:radio-tower" class="size-3.5" />
-                  {{ formatSource(spotlightStory.sourceHost) }}
-                </span>
-                <span class="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1">
-                  <Icon name="mdi:clock-outline" class="size-3.5" />
-                  {{ formatRelativeDate(spotlightStory.pubDate) }}
-                </span>
-                <span class="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1">
-                  <Icon name="mdi:star-four-points-outline" class="size-3.5" />
-                  Signal {{ spotlightStory.score }}
-                </span>
-              </div>
-            </div>
-
-            <div
-              v-else
-              class="mt-4 rounded-2xl border border-dashed border-white/10 px-4 py-6 text-[13px] text-slate-300/70"
-            >
-              News is being collected. As soon as the first source resolves, the spotlight card will
-              update.
             </div>
           </div>
 
@@ -596,7 +679,12 @@ watch(
             <div
               v-for="group in countryGroups.slice(0, 3)"
               :key="group.country"
-              class="pointer-events-auto w-48 rounded-[1.35rem] border border-white/10 bg-slate-950/55 p-3.5 shadow-[0_12px_34px_rgba(2,6,23,0.32)] backdrop-blur-md"
+              class="pointer-events-auto w-48 cursor-pointer rounded-[1.35rem] border border-white/10 bg-slate-950/55 p-3.5 shadow-[0_12px_34px_rgba(2,6,23,0.32)] backdrop-blur-md transition hover:bg-white/5 focus:outline-none"
+              tabindex="0"
+              role="button"
+              @click="openFeedItem(group.lead)"
+              @keydown.enter.prevent="openFeedItem(group.lead)"
+              @keydown.space.prevent="openFeedItem(group.lead)"
             >
               <div class="flex items-center justify-between gap-2">
                 <p class="text-[13px] font-semibold text-white">{{ group.country }}</p>
@@ -607,9 +695,18 @@ watch(
               <p class="mt-2 text-xs uppercase tracking-[0.22em] text-slate-400">
                 Avg signal {{ group.averageScore }}
               </p>
-              <p class="mt-2.5 text-[13px] leading-5 text-slate-300/80">
-                {{ summarize(group.lead.description) }}
-              </p>
+              <div class="mt-2.5">
+                <HtmlContent :html="getPreviewHtml(group.lead)" variant="preview" />
+              </div>
+              <div
+                class="mt-2 flex items-center justify-between gap-2 border-t border-white/8 pt-2 text-[11px] text-slate-400"
+              >
+                <span>{{ formatRelativeDate(group.lead.pubDate) }}</span>
+                <span class="inline-flex items-center gap-1 text-cyan-100/80">
+                  <Icon name="mdi:arrow-top-right" class="size-3.5" />
+                  Details
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -697,43 +794,51 @@ watch(
             @keydown.enter.prevent="openFeedItem(item)"
             @keydown.space.prevent="openFeedItem(item)"
           >
-            <div class="flex items-start justify-between gap-3">
-              <div class="space-y-2.5">
-                <div
-                  class="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-slate-400"
+            <div class="space-y-2.5">
+              <div
+                class="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-slate-400"
+              >
+                <span
+                  class="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-1 text-[11px] tracking-[0.18em] text-slate-300/75"
                 >
-                  <span
-                    class="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-1 text-[11px] tracking-[0.18em] text-slate-300/75"
-                  >
-                    <Icon name="mdi:newspaper-variant-outline" class="size-3.5" />
-                    {{ formatSource(item.sourceHost) }}
-                  </span>
-                  <span>{{ formatRelativeDate(item.pubDate) }}</span>
-                </div>
-
-                <a
-                  :href="item.link"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  class="block text-[15px] font-medium leading-5.5 text-white transition group-hover:text-cyan-100"
-                  @click.stop
-                >
-                  {{ item.title }}
-                </a>
-
-                <p class="text-[13px] leading-5 text-slate-300/75">
-                  {{ summarize(item.description) }}
-                </p>
+                  <Icon name="mdi:newspaper-variant-outline" class="size-3.5" />
+                  {{ formatSource(item.sourceHost) }}
+                </span>
+                <span>{{ formatRelativeDate(item.pubDate) }}</span>
               </div>
 
-              <div class="flex shrink-0 flex-col items-end gap-2">
-                <span class="rounded-full bg-amber-300/10 px-2.5 py-1 text-xs text-amber-100">
+              <a
+                :href="item.link"
+                target="_blank"
+                rel="noreferrer noopener"
+                class="block text-[15px] font-medium leading-5.5 text-white transition group-hover:text-cyan-100"
+                @click.stop
+              >
+                {{ item.title }}
+              </a>
+
+              <HtmlContent :html="getPreviewHtml(item)" variant="preview" />
+            </div>
+
+            <div
+              class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/8 pt-2.5 text-[11px] text-slate-400"
+            >
+              <div class="flex min-w-0 flex-wrap items-center gap-2">
+                <span>{{ formatAbsoluteDate(item.pubDate) }}</span>
+                <span class="h-1 w-1 rounded-full bg-slate-600" />
+                <span>{{ item.countryDetails.method }}</span>
+                <span class="h-1 w-1 rounded-full bg-slate-600" />
+                <span>{{ item.countryDetails.confidence }} confidence</span>
+              </div>
+
+              <div class="ml-auto flex shrink-0 flex-wrap items-center gap-1.5">
+                <span class="rounded-full bg-amber-300/10 px-2 py-0.5 text-[11px] text-amber-100">
                   {{ item.score }} pts
                 </span>
                 <button
                   v-if="item.country"
                   type="button"
-                  class="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-right text-xs text-slate-200 transition hover:border-cyan-300/30 hover:text-cyan-100"
+                  class="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] text-slate-200 transition hover:border-cyan-300/30 hover:text-cyan-100"
                   @click.stop="openItemCountry(item)"
                 >
                   {{ item.country }}
@@ -741,17 +846,7 @@ watch(
               </div>
             </div>
 
-            <div class="mt-3 flex flex-wrap items-center gap-2.5 text-[11px] text-slate-400">
-              <span>{{ formatAbsoluteDate(item.pubDate) }}</span>
-              <span class="h-1 w-1 rounded-full bg-slate-600" />
-              <span>{{ item.countryDetails.method }}</span>
-              <span class="h-1 w-1 rounded-full bg-slate-600" />
-              <span>{{ item.countryDetails.confidence }} confidence</span>
-            </div>
-
-            <div
-              class="mt-3 flex items-center justify-between gap-3 border-t border-white/8 pt-2 text-[11px] text-slate-400"
-            >
+            <div class="mt-2 flex items-center justify-between gap-3 text-[11px] text-slate-400">
               <span>Open full dispatch</span>
               <span class="inline-flex items-center gap-1 text-cyan-100/80">
                 <Icon name="mdi:arrow-top-right" class="size-3.5" />
@@ -876,9 +971,10 @@ watch(
 
           <div class="mt-4 rounded-3xl border border-white/8 bg-white/3 p-4">
             <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Dispatch</p>
-            <RichFeedHtml
+            <HtmlContent
               v-if="activeFeedItemDescriptionHtml"
               :html="activeFeedItemDescriptionHtml"
+              variant="detail"
             />
             <p v-else class="mt-3 text-[14px] leading-6 text-slate-200/85">
               No additional description is available for this item.
