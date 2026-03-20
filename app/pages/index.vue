@@ -385,7 +385,7 @@ watch(
 
 <template>
   <section
-    class="grid min-h-0 flex-1 gap-4 xl:h-full xl:grid-cols-[minmax(0,1.45fr)_24rem] xl:grid-rows-[minmax(0,1fr)]"
+    class="grid min-h-0 flex-1 gap-3 xl:h-full xl:grid-cols-[minmax(0,1.45fr)_23rem] xl:grid-rows-[minmax(0,1fr)]"
   >
     <div
       class="relative order-2 flex min-h-120 flex-col overflow-hidden rounded-4xl border border-white/10 bg-[linear-gradient(150deg,rgba(10,16,24,0.96),rgba(11,18,30,0.88))] shadow-[0_30px_90px_rgba(3,8,20,0.45)] xl:order-1 xl:min-h-0 xl:h-full"
@@ -395,40 +395,40 @@ watch(
       />
 
       <div
-        class="relative z-20 flex flex-wrap items-start justify-between gap-4 border-b border-white/10 px-5 py-5 sm:px-6"
+        class="relative z-20 flex flex-wrap items-start justify-between gap-3 border-b border-white/10 px-4 py-4 sm:px-5"
       >
         <div class="space-y-2">
           <p class="text-xs font-medium uppercase tracking-[0.32em] text-cyan-200/70">
             Global signal map
           </p>
           <div>
-            <h1 class="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+            <h1 class="text-xl font-semibold tracking-tight text-white sm:text-2xl">
               Latest tech news, routed through geography
             </h1>
-            <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-300/80">
+            <p class="mt-1.5 max-w-2xl text-[13px] leading-5 text-slate-300/80">
               The feed rotates through countries inferred from each publisher, then lets you lock
               the map and feed to a specific territory.
             </p>
           </div>
         </div>
 
-        <div class="flex flex-wrap gap-2 text-xs text-slate-200/80">
+        <div class="flex flex-wrap gap-2 text-[11px] text-slate-200/80">
           <button
             type="button"
-            class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 transition hover:border-cyan-300/40 hover:bg-cyan-300/10"
+            class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 transition hover:border-cyan-300/40 hover:bg-cyan-300/10"
             @click="refreshNews"
           >
-            <Icon name="mdi:refresh" class="size-4" />
+            <Icon name="mdi:refresh" class="size-3.5" />
             <span>{{ isRefreshing ? "Refreshing" : "Refresh feed" }}</span>
           </button>
 
           <button
             v-if="hasManualCountrySelection"
             type="button"
-            class="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-amber-100 transition hover:border-amber-200/50 hover:bg-amber-300/15"
+            class="inline-flex items-center gap-1.5 rounded-full border border-amber-300/30 bg-amber-300/10 px-2.5 py-1.5 text-amber-100 transition hover:border-amber-200/50 hover:bg-amber-300/15"
             @click="clearCountrySpotlight"
           >
-            <Icon name="mdi:crosshairs-gps" class="size-4" />
+            <Icon name="mdi:crosshairs-gps" class="size-3.5" />
             <span>Release spotlight lock</span>
           </button>
         </div>
@@ -442,17 +442,17 @@ watch(
         />
       </div>
 
-      <div class="pointer-events-none absolute inset-x-0 top-24 z-30 px-5 sm:px-6">
+      <div class="pointer-events-none absolute inset-x-0 top-38 z-30 px-4 sm:px-5">
         <div class="grid gap-4 lg:grid-cols-[minmax(0,24rem)_1fr] lg:items-start">
           <div
-            class="pointer-events-auto rounded-3xl border border-white/10 bg-slate-950/65 p-5 shadow-[0_15px_45px_rgba(2,6,23,0.42)] backdrop-blur-md"
+            class="pointer-events-auto rounded-3xl border border-white/10 bg-slate-950/65 p-4 shadow-[0_15px_45px_rgba(2,6,23,0.42)] backdrop-blur-md"
           >
             <div class="flex items-center justify-between gap-3">
               <div>
                 <p class="text-[11px] font-medium uppercase tracking-[0.3em] text-cyan-200/70">
                   Now orbiting
                 </p>
-                <p class="mt-2 text-lg font-semibold text-white">
+                <p class="mt-1.5 text-base font-semibold text-white">
                   {{ spotlightGroup?.country ?? "Loading live dispatches" }}
                 </p>
               </div>
@@ -470,12 +470,12 @@ watch(
                 :href="spotlightStory.link"
                 target="_blank"
                 rel="noreferrer noopener"
-                class="block text-xl font-medium leading-tight text-white transition hover:text-cyan-200"
+                class="block text-lg font-medium leading-tight text-white transition hover:text-cyan-200"
               >
                 {{ spotlightStory.title }}
               </a>
 
-              <p class="text-sm leading-6 text-slate-300/80">
+              <p class="text-[13px] leading-5 text-slate-300/80">
                 {{ summarize(spotlightStory.description) }}
               </p>
 
@@ -497,7 +497,7 @@ watch(
 
             <div
               v-else
-              class="mt-4 rounded-2xl border border-dashed border-white/10 px-4 py-8 text-sm text-slate-300/70"
+              class="mt-4 rounded-2xl border border-dashed border-white/10 px-4 py-6 text-[13px] text-slate-300/70"
             >
               News is being collected. As soon as the first source resolves, the spotlight card will
               update.
@@ -508,10 +508,10 @@ watch(
             <div
               v-for="group in countryGroups.slice(0, 3)"
               :key="group.country"
-              class="pointer-events-auto w-52 rounded-[1.35rem] border border-white/10 bg-slate-950/55 p-4 shadow-[0_12px_34px_rgba(2,6,23,0.32)] backdrop-blur-md"
+              class="pointer-events-auto w-48 rounded-[1.35rem] border border-white/10 bg-slate-950/55 p-3.5 shadow-[0_12px_34px_rgba(2,6,23,0.32)] backdrop-blur-md"
             >
               <div class="flex items-center justify-between gap-2">
-                <p class="text-sm font-semibold text-white">{{ group.country }}</p>
+                <p class="text-[13px] font-semibold text-white">{{ group.country }}</p>
                 <span class="rounded-full bg-cyan-300/10 px-2 py-1 text-[11px] text-cyan-100">
                   {{ group.count }}
                 </span>
@@ -519,7 +519,7 @@ watch(
               <p class="mt-2 text-xs uppercase tracking-[0.22em] text-slate-400">
                 Avg signal {{ group.averageScore }}
               </p>
-              <p class="mt-3 text-sm leading-6 text-slate-300/80">
+              <p class="mt-2.5 text-[13px] leading-5 text-slate-300/80">
                 {{ summarize(group.lead.description) }}
               </p>
             </div>
@@ -527,26 +527,28 @@ watch(
         </div>
       </div>
 
-      <div class="absolute inset-x-0 bottom-0 z-20 px-5 pb-5 sm:px-6 sm:pb-6">
+      <div class="absolute inset-x-0 bottom-0 z-20 px-4 pb-4 sm:px-5 sm:pb-5">
         <div
-          class="grid gap-3 rounded-3xl border border-white/10 bg-slate-950/60 p-4 backdrop-blur-md sm:grid-cols-3"
+          class="grid gap-2.5 rounded-3xl border border-white/10 bg-slate-950/60 p-3.5 backdrop-blur-md sm:grid-cols-3"
         >
-          <div class="rounded-2xl border border-white/8 bg-white/5 p-4">
+          <div class="rounded-2xl border border-white/8 bg-white/5 p-3.5">
             <p class="text-[11px] uppercase tracking-[0.26em] text-slate-400">Loaded</p>
-            <p class="mt-3 text-2xl font-semibold text-white">{{ loadedItems.length }}</p>
-            <p class="mt-1 text-sm text-slate-300/70">stories rendered locally</p>
+            <p class="mt-2 text-xl font-semibold text-white">{{ loadedItems.length }}</p>
+            <p class="mt-1 text-[13px] text-slate-300/70">stories rendered locally</p>
           </div>
 
-          <div class="rounded-2xl border border-white/8 bg-white/5 p-4">
+          <div class="rounded-2xl border border-white/8 bg-white/5 p-3.5">
             <p class="text-[11px] uppercase tracking-[0.26em] text-slate-400">Mapped</p>
-            <p class="mt-3 text-2xl font-semibold text-white">{{ mappedCountryCount }}</p>
-            <p class="mt-1 text-sm text-slate-300/70">countries currently lighting the globe</p>
+            <p class="mt-2 text-xl font-semibold text-white">{{ mappedCountryCount }}</p>
+            <p class="mt-1 text-[13px] text-slate-300/70">countries currently lighting the globe</p>
           </div>
 
-          <div class="rounded-2xl border border-white/8 bg-white/5 p-4">
+          <div class="rounded-2xl border border-white/8 bg-white/5 p-3.5">
             <p class="text-[11px] uppercase tracking-[0.26em] text-slate-400">Unmapped</p>
-            <p class="mt-3 text-2xl font-semibold text-white">{{ unmappedItemCount }}</p>
-            <p class="mt-1 text-sm text-slate-300/70">stories without a reliable country signal</p>
+            <p class="mt-2 text-xl font-semibold text-white">{{ unmappedItemCount }}</p>
+            <p class="mt-1 text-[13px] text-slate-300/70">
+              stories without a reliable country signal
+            </p>
           </div>
         </div>
       </div>
@@ -555,28 +557,30 @@ watch(
     <aside
       class="order-1 flex min-h-96 min-w-0 flex-col overflow-hidden rounded-4xl border border-white/10 bg-slate-950/80 shadow-[0_20px_60px_rgba(2,6,23,0.3)] backdrop-blur-md xl:order-2 xl:min-h-0 xl:h-full"
     >
-      <div class="border-b border-white/10 px-4 py-4 sm:px-5">
+      <div class="border-b border-white/10 px-3.5 py-3.5 sm:px-4">
         <div class="flex items-start justify-between gap-3">
           <div>
             <p class="text-[11px] font-medium uppercase tracking-[0.3em] text-amber-200/70">
               {{ visibleItemsTitle }}
             </p>
-            <h2 class="mt-2 text-xl font-semibold text-white">
+            <h2 class="mt-1.5 text-lg font-semibold text-white">
               {{ totalItems }} total stories in the feed
             </h2>
-            <p class="mt-1 text-sm text-slate-300/70">{{ visibleItemsHint }}</p>
+            <p class="mt-1 text-[13px] text-slate-300/70">{{ visibleItemsHint }}</p>
           </div>
 
           <div
-            class="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-200/80"
+            class="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-200/80 whitespace-nowrap"
           >
             Page {{ currentPage || 1 }} / {{ totalPages || 1 }}
           </div>
         </div>
       </div>
 
-      <div v-if="error && !loadedItems.length" class="p-4 sm:p-5">
-        <div class="rounded-3xl border border-rose-300/25 bg-rose-300/10 p-5 text-sm text-rose-50">
+      <div v-if="error && !loadedItems.length" class="p-3.5 sm:p-4">
+        <div
+          class="rounded-3xl border border-rose-300/25 bg-rose-300/10 p-4 text-[13px] text-rose-50"
+        >
           <p class="font-medium">The news feed failed to load.</p>
           <p class="mt-2 text-rose-100/80">
             Try the refresh action and re-run the initial request.
@@ -584,24 +588,24 @@ watch(
         </div>
       </div>
 
-      <div v-else-if="pending && !loadedItems.length" class="grid gap-3 p-4 sm:p-5">
+      <div v-else-if="pending && !loadedItems.length" class="grid gap-3 p-3.5 sm:p-4">
         <div
           v-for="index in 4"
           :key="index"
-          class="h-36 animate-pulse rounded-[1.35rem] border border-white/8 bg-white/4"
+          class="h-32 animate-pulse rounded-[1.35rem] border border-white/8 bg-white/4"
         />
       </div>
 
-      <div v-else ref="feedRef" class="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
-        <div class="space-y-3">
+      <div v-else ref="feedRef" class="min-h-0 flex-1 overflow-y-auto px-3.5 py-3.5 sm:px-4">
+        <div class="space-y-2.5">
           <article
             v-for="item in visibleItems"
             :key="item.link"
-            class="group rounded-[1.35rem] border border-white/8 bg-white/3 p-4 transition hover:border-cyan-300/30 hover:bg-cyan-300/5"
+            class="group rounded-[1.35rem] border border-white/8 bg-white/3 p-3.5 transition hover:border-cyan-300/30 hover:bg-cyan-300/5"
             @mouseenter="previewItem(item)"
           >
             <div class="flex items-start justify-between gap-3">
-              <div class="space-y-3">
+              <div class="space-y-2.5">
                 <div
                   class="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-slate-400"
                 >
@@ -618,12 +622,12 @@ watch(
                   :href="item.link"
                   target="_blank"
                   rel="noreferrer noopener"
-                  class="block text-base font-medium leading-6 text-white transition group-hover:text-cyan-100"
+                  class="block text-[15px] font-medium leading-5.5 text-white transition group-hover:text-cyan-100"
                 >
                   {{ item.title }}
                 </a>
 
-                <p class="text-sm leading-6 text-slate-300/75">
+                <p class="text-[13px] leading-5 text-slate-300/75">
                   {{ summarize(item.description) }}
                 </p>
               </div>
@@ -643,7 +647,7 @@ watch(
               </div>
             </div>
 
-            <div class="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+            <div class="mt-3 flex flex-wrap items-center gap-2.5 text-[11px] text-slate-400">
               <span>{{ formatAbsoluteDate(item.pubDate) }}</span>
               <span class="h-1 w-1 rounded-full bg-slate-600" />
               <span>{{ item.countryDetails.method }}</span>
@@ -654,29 +658,29 @@ watch(
 
           <div
             v-if="!visibleItems.length"
-            class="rounded-[1.35rem] border border-dashed border-white/10 px-4 py-10 text-center text-sm text-slate-300/70"
+            class="rounded-[1.35rem] border border-dashed border-white/10 px-4 py-8 text-center text-[13px] text-slate-300/70"
           >
             No stories match the current map selection yet.
           </div>
 
           <div
             v-if="isLoadingMore"
-            class="rounded-[1.35rem] border border-white/8 bg-white/3 px-4 py-5 text-center text-sm text-slate-300/75"
+            class="rounded-[1.35rem] border border-white/8 bg-white/3 px-4 py-4 text-center text-[13px] text-slate-300/75"
           >
             Loading another page of stories...
           </div>
 
           <div
             v-else-if="hasMore"
-            class="rounded-[1.35rem] border border-dashed border-white/10 px-4 py-5 text-center text-sm text-slate-400"
+            class="rounded-[1.35rem] border border-dashed border-white/10 px-4 py-4 text-center text-[13px] text-slate-400"
           >
             <p>Scroll to continue loading more stories.</p>
             <button
               type="button"
-              class="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200 transition hover:border-cyan-300/35 hover:bg-cyan-300/10 hover:text-cyan-100"
+              class="mt-3 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] text-slate-200 transition hover:border-cyan-300/35 hover:bg-cyan-300/10 hover:text-cyan-100"
               @click="loadMore"
             >
-              <Icon name="mdi:arrow-down-circle-outline" class="size-4" />
+              <Icon name="mdi:arrow-down-circle-outline" class="size-3.5" />
               Load next page
             </button>
           </div>

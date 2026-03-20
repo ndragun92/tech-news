@@ -1115,16 +1115,16 @@ const emit = defineEmits<{
 }>();
 
 const COUNTRY_BASE_CLASSES = [
-  "fill-zinc-900/50",
-  "stroke-zinc-600",
+  "fill-slate-950",
+  "stroke-slate-700",
   "transition-all",
   "duration-200",
   "ease-out",
   "cursor-pointer",
-  "hover:fill-zinc-700",
+  "hover:fill-slate-700",
   "focus:outline-none",
 ];
-const COUNTRY_ACTIVE_CLASSES = ["fill-yellow-600!", "stroke-yellow-500!"];
+const COUNTRY_ACTIVE_CLASSES = ["fill-cyan-900!", "stroke-cyan-800!"];
 
 const svgRef = ref<SVGSVGElement | null>(null);
 const selectedCountry = ref<CountrySelection | null>(null);
@@ -1253,17 +1253,17 @@ const setBlinkState = (paths: SVGPathElement[], shouldBlink: boolean) => {
     path.animate(
       [
         {
-          filter: "drop-shadow(0 0 0 rgba(250, 204, 21, 0)) brightness(1)",
+          filter: "drop-shadow(0 0 0 rgba(0, 117, 149, 0)) brightness(1)",
         },
         {
-          filter: "drop-shadow(0 0 22px rgba(250, 204, 21, 0.95)) brightness(1.8)",
+          filter: "drop-shadow(0 0 22px rgba(0, 117, 149, 0.95)) brightness(1.8)",
           offset: 0.38,
         },
         {
-          filter: "drop-shadow(0 0 12px rgba(250, 204, 21, 0.7)) brightness(1.35)",
+          filter: "drop-shadow(0 0 12px rgba(0, 117, 149, 0.7)) brightness(1.35)",
         },
         {
-          filter: "drop-shadow(0 0 0 rgba(250, 204, 21, 0)) brightness(1)",
+          filter: "drop-shadow(0 0 0 rgba(0, 117, 149, 0)) brightness(1)",
         },
       ],
       {
@@ -1378,7 +1378,8 @@ const syncCountriesFromProps = (
   setActiveCountry(countryPaths, selectedPath);
 };
 
-onMounted(() => {
+onMounted(async () => {
+  await nextTick;
   decorateCountryPaths();
   syncCountriesFromProps(props.countryNames);
 });
