@@ -34,14 +34,15 @@ const todayLabel = new Intl.DateTimeFormat("en", {
                   >News atlas</span
                 >
                 <span class="block text-xl font-semibold tracking-tight sm:text-2xl"
-                  >Tech dispatch board</span
+                  >Global Tech News</span
                 >
               </span>
             </NuxtLink>
 
-            <p class="max-w-2xl text-[13px] leading-5 text-slate-300/75">
-              A Nuxt 4 shell for watching fresh engineering stories move across publishers,
-              countries, and confidence signals.
+            <p class="max-w-3xl text-[13px] leading-5 text-slate-300/75">
+              A global news atlas, charting the latest tech stories and trends across the world.
+              From Silicon Valley breakthroughs to emerging innovations in Asia, our dispatch board
+              offers a unique perspective on the global tech ecosystem.
             </p>
           </div>
 

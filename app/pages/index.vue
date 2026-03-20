@@ -49,6 +49,11 @@ type CountryGroup = {
 
 const PAGE_SIZE = 12;
 const WORLD_COUNTRY_SET = new Set<string>(countries);
+const CALENDAR_DATE_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 
 const feedRef = ref<HTMLElement | null>(null);
 const feedBottomRef = ref<HTMLElement | null>(null);
@@ -56,12 +61,15 @@ const loadedItems = ref<TechNewsItem[]>([]);
 const currentPage = ref(0);
 const totalPages = ref(0);
 const totalItems = ref(0);
+const spotlightItems = ref<TechNewsItem[]>([]);
+const spotlightQueue = ref<string[]>([]);
+const seenNewsLinks = useLocalStorage<string[]>("tech-news-seen-links", []);
 const activeFeedItem = ref<TechNewsItem | null>(null);
+const spotlightStory = ref<TechNewsItem | null>(null);
 const isLoadingMore = ref(false);
 const isRefreshing = ref(false);
 const spotlightIndex = ref(0);
 const selectedCountry = ref<WorldMapCountryName | null>(null);
-const hasManualCountrySelection = ref(false);
 
 const createEmptyResponse = (): TechNewsResponse => ({
   page: 1,
@@ -229,6 +237,40 @@ const formatSource = (value: string) => {
   return value.replace(/^www\./, "");
 };
 
+const getCalendarDateKey = (value: string) => {
+  const timestamp = getPublishedTimestamp(value);
+
+  if (!timestamp) {
+    return "";
+  }
+
+  return CALENDAR_DATE_FORMATTER.format(timestamp);
+};
+
+const isItemFromToday = (item: TechNewsItem) => {
+  const itemDate = getCalendarDateKey(item.pubDate);
+
+  return Boolean(itemDate) && itemDate === CALENDAR_DATE_FORMATTER.format(Date.now());
+};
+
+const seenNewsLookup = computed(() => new Set(seenNewsLinks.value));
+
+const isItemSeen = (item: TechNewsItem) => {
+  return seenNewsLookup.value.has(item.link);
+};
+
+const markItemAsSeen = (item: TechNewsItem) => {
+  if (!item.link || seenNewsLookup.value.has(item.link)) {
+    return;
+  }
+
+  seenNewsLinks.value = [...seenNewsLinks.value, item.link];
+};
+
+const handleOpenOriginalItem = (item: TechNewsItem) => {
+  markItemAsSeen(item);
+};
+
 const getCountryLabel = (item: TechNewsItem) => {
   return item.country ?? "Country unresolved";
 };
@@ -272,6 +314,81 @@ const getPreviewHtml = (item: TechNewsItem) => {
   return renderPreviewHtml(item.description);
 };
 
+const shuffleItems = (items: TechNewsItem[], blockedFirstLink?: string | null) => {
+  const shuffledItems = [...items];
+
+  for (let index = shuffledItems.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    const currentItem = shuffledItems[index] as TechNewsItem;
+
+    shuffledItems[index] = shuffledItems[swapIndex] as TechNewsItem;
+    shuffledItems[swapIndex] = currentItem;
+  }
+
+  if (blockedFirstLink && shuffledItems.length > 1 && shuffledItems[0]?.link === blockedFirstLink) {
+    const nextIndex = shuffledItems.findIndex((item) => item.link !== blockedFirstLink);
+
+    if (nextIndex > 0) {
+      const firstItem = shuffledItems[0] as TechNewsItem;
+
+      shuffledItems[0] = shuffledItems[nextIndex] as TechNewsItem;
+      shuffledItems[nextIndex] = firstItem;
+    }
+  }
+
+  return shuffledItems;
+};
+
+const refillSpotlightQueue = () => {
+  spotlightQueue.value = shuffleItems(spotlightItems.value, spotlightStory.value?.link).map(
+    (item) => item.link
+  );
+};
+
+const rotateSpotlightStory = () => {
+  if (!spotlightItems.value.length) {
+    spotlightQueue.value = [];
+    spotlightStory.value = null;
+    return;
+  }
+
+  if (!spotlightQueue.value.length) {
+    refillSpotlightQueue();
+  }
+
+  const nextLink = spotlightQueue.value.shift();
+
+  spotlightStory.value =
+    spotlightItems.value.find((item) => item.link === nextLink) ?? spotlightItems.value[0] ?? null;
+};
+
+const resetSpotlightRotation = (items: TechNewsItem[]) => {
+  spotlightItems.value = items;
+  spotlightQueue.value = [];
+  rotateSpotlightStory();
+};
+
+const syncSpotlightFeed = async (requestedTotal?: number) => {
+  const initialLimit = Math.max(requestedTotal ?? totalItems.value ?? PAGE_SIZE, PAGE_SIZE);
+  let response = await $fetch<TechNewsResponse>("/api/news/tech", {
+    query: {
+      page: 1,
+      limit: initialLimit,
+    },
+  });
+
+  if (response.total > response.data.length) {
+    response = await $fetch<TechNewsResponse>("/api/news/tech", {
+      query: {
+        page: 1,
+        limit: response.total,
+      },
+    });
+  }
+
+  resetSpotlightRotation(response.data);
+};
+
 const syncResponse = (response: TechNewsResponse, mode: "replace" | "append" = "replace") => {
   loadedItems.value = mode === "append" ? [...loadedItems.value, ...response.data] : response.data;
   currentPage.value = response.page;
@@ -281,12 +398,13 @@ const syncResponse = (response: TechNewsResponse, mode: "replace" | "append" = "
 
 watch(
   initialResponse,
-  (response) => {
+  async (response) => {
     if (!response) {
       return;
     }
 
     syncResponse(response, "replace");
+    await syncSpotlightFeed(response.total);
   },
   { immediate: true }
 );
@@ -325,18 +443,6 @@ const countryGroups = computed<CountryGroup[]>(() => {
     );
 });
 
-const spotlightGroup = computed(() => {
-  if (hasManualCountrySelection.value && selectedCountry.value) {
-    return countryGroups.value.find((group) => group.country === selectedCountry.value) ?? null;
-  }
-
-  return countryGroups.value[spotlightIndex.value] ?? null;
-});
-
-const spotlightStory = computed(() => {
-  return spotlightGroup.value?.lead ?? loadedItems.value[0] ?? null;
-});
-
 const activeMapCountries = computed<WorldMapCountryName[]>(() => {
   return countryGroups.value.map((group) => group.country);
 });
@@ -346,7 +452,7 @@ const visibleItems = computed(() => {
 });
 
 const visibleItemsTitle = computed(() => {
-  if (hasManualCountrySelection.value && selectedCountry.value) {
+  if (selectedCountry.value) {
     return "All dispatches";
   }
 
@@ -354,7 +460,7 @@ const visibleItemsTitle = computed(() => {
 });
 
 const visibleItemsHint = computed(() => {
-  if (hasManualCountrySelection.value && selectedCountry.value) {
+  if (selectedCountry.value) {
     return `Feed stays global while the spotlight is locked to ${selectedCountry.value}.`;
   }
 
@@ -381,12 +487,10 @@ const setCountrySpotlight = (country: WorldMapCountryName) => {
 
   spotlightIndex.value = groupIndex;
   selectedCountry.value = country;
-  hasManualCountrySelection.value = true;
 };
 
 const clearCountrySpotlight = () => {
   selectedCountry.value = null;
-  hasManualCountrySelection.value = false;
 };
 
 const handleMapSelect = (country: CountrySelection) => {
@@ -398,7 +502,7 @@ const handleMapSelect = (country: CountrySelection) => {
 };
 
 const previewItem = (item: TechNewsItem) => {
-  if (hasManualCountrySelection.value || !isWorldMapCountryName(item.country)) {
+  if (!isWorldMapCountryName(item.country)) {
     return;
   }
 
@@ -418,6 +522,7 @@ const openItemCountry = (item: TechNewsItem) => {
 };
 
 const openFeedItem = (item: TechNewsItem) => {
+  markItemAsSeen(item);
   activeFeedItem.value = item;
 };
 
@@ -480,12 +585,12 @@ useIntersectionObserver(
 );
 
 useIntervalFn(() => {
-  if (hasManualCountrySelection.value || countryGroups.value.length < 2) {
+  if (!spotlightItems.value.length) {
     return;
   }
 
-  spotlightIndex.value = (spotlightIndex.value + 1) % countryGroups.value.length;
-}, 5_200); // Set to just over 5 seconds to allow for the fade animation to complete before switching to the next country
+  rotateSpotlightStory();
+}, 10_000);
 
 useEventListener(document, "keydown", (event: KeyboardEvent) => {
   if (event.key !== "Escape" || !activeFeedItem.value) {
@@ -531,16 +636,14 @@ watch(
         class="relative z-20 flex flex-wrap items-start justify-between gap-3 border-b border-white/10 px-4 py-4 sm:px-5"
       >
         <div class="space-y-2">
-          <p class="text-xs font-medium uppercase tracking-[0.32em] text-cyan-200/70">
-            Global signal map
-          </p>
+          <p class="text-xs font-medium uppercase tracking-[0.32em] text-cyan-200/70">News</p>
           <div>
             <h1 class="text-xl font-semibold tracking-tight text-white sm:text-2xl">
               Latest tech news, routed through geography
             </h1>
             <p class="mt-1.5 max-w-2xl text-[13px] leading-5 text-slate-300/80">
-              The feed rotates through countries inferred from each publisher, then lets you lock
-              the map and feed to a specific territory.
+              The map lights up publisher geographies while the lead card rotates through the full
+              feed in a non-repeating random order every 10 seconds.
             </p>
           </div>
         </div>
@@ -553,16 +656,6 @@ watch(
           >
             <Icon name="mdi:refresh" class="size-3.5" />
             <span>{{ isRefreshing ? "Refreshing" : "Refresh feed" }}</span>
-          </button>
-
-          <button
-            v-if="hasManualCountrySelection"
-            type="button"
-            class="inline-flex items-center gap-1.5 rounded-full border border-amber-300/30 bg-amber-300/10 px-2.5 py-1.5 text-amber-100 transition hover:border-amber-200/50 hover:bg-amber-300/15"
-            @click="clearCountrySpotlight"
-          >
-            <Icon name="mdi:crosshairs-gps" class="size-3.5" />
-            <span>Release spotlight lock</span>
           </button>
         </div>
       </div>
@@ -582,7 +675,12 @@ watch(
           >
             <div
               v-if="spotlightStory"
-              class="cursor-pointer rounded-2xl transition hover:bg-white/3 p-4 focus:outline-none"
+              class="cursor-pointer rounded-2xl p-4 transition hover:bg-white/3 focus:outline-none"
+              :class="
+                isItemFromToday(spotlightStory)
+                  ? 'border! border-emerald-300/30! bg-emerald-300/8! shadow-[0_16px_40px_rgba(16,185,129,0.12)]!'
+                  : ''
+              "
               tabindex="0"
               role="button"
               @click="openFeedItem(spotlightStory)"
@@ -591,19 +689,9 @@ watch(
             >
               <div class="flex items-center justify-between gap-3">
                 <div>
-                  <p class="text-[11px] font-medium uppercase tracking-[0.3em] text-cyan-200/70">
-                    Now orbiting
-                  </p>
                   <p class="mt-1.5 text-base font-semibold text-white">
-                    {{ spotlightGroup?.country ?? "Loading live dispatches" }}
+                    {{ spotlightStory.country ?? "Country unresolved" }}
                   </p>
-                </div>
-
-                <div
-                  v-if="spotlightGroup"
-                  class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-200/80"
-                >
-                  {{ spotlightGroup.count }} stories
                 </div>
               </div>
 
@@ -613,7 +701,7 @@ watch(
                   target="_blank"
                   rel="noreferrer noopener"
                   class="block text-lg font-medium leading-tight text-white transition hover:text-cyan-200"
-                  @click.stop
+                  @click.stop="handleOpenOriginalItem(spotlightStory)"
                 >
                   {{ spotlightStory.title }}
                 </a>
@@ -625,13 +713,30 @@ watch(
                     <Icon name="mdi:radio-tower" class="size-3.5" />
                     {{ formatSource(spotlightStory.sourceHost) }}
                   </span>
+                  <span
+                    class="inline-flex items-center gap-1 rounded-full px-2.5 py-1"
+                    :class="
+                      isItemSeen(spotlightStory)
+                        ? 'bg-slate-200/10 text-slate-200/85'
+                        : 'bg-cyan-300/12 text-cyan-50'
+                    "
+                  >
+                    <Icon
+                      :name="isItemSeen(spotlightStory) ? 'mdi:eye-outline' : 'mdi:eye-off-outline'"
+                      class="size-3.5"
+                    />
+                    {{ isItemSeen(spotlightStory) ? "Seen" : "Unseen" }}
+                  </span>
+                  <span
+                    v-if="isItemFromToday(spotlightStory)"
+                    class="inline-flex items-center gap-1 rounded-full bg-emerald-300/14 px-2.5 py-1 text-emerald-50"
+                  >
+                    <Icon name="mdi:calendar-today" class="size-3.5" />
+                    Today
+                  </span>
                   <span class="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1">
                     <Icon name="mdi:clock-outline" class="size-3.5" />
                     {{ formatRelativeDate(spotlightStory.pubDate) }}
-                  </span>
-                  <span class="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1">
-                    <Icon name="mdi:star-four-points-outline" class="size-3.5" />
-                    Signal {{ spotlightStory.score }}
                   </span>
                 </div>
 
@@ -651,61 +756,19 @@ watch(
               <div class="flex items-center justify-between gap-3">
                 <div>
                   <p class="text-[11px] font-medium uppercase tracking-[0.3em] text-cyan-200/70">
-                    Now orbiting
+                    Random dispatch
                   </p>
                   <p class="mt-1.5 text-base font-semibold text-white">
-                    {{ spotlightGroup?.country ?? "Loading live dispatches" }}
+                    {{ spotlightStory?.country ?? "Loading live dispatches" }}
                   </p>
-                </div>
-
-                <div
-                  v-if="spotlightGroup"
-                  class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-200/80"
-                >
-                  {{ spotlightGroup.count }} stories
                 </div>
               </div>
 
               <div
                 class="mt-4 rounded-2xl border border-dashed border-white/10 px-4 py-6 text-[13px] text-slate-300/70"
               >
-                News is being collected. As soon as the first source resolves, the spotlight card
-                will update.
-              </div>
-            </div>
-          </div>
-
-          <div class="pointer-events-none hidden items-start justify-end gap-3 pt-2 lg:flex">
-            <div
-              v-for="group in countryGroups.slice(0, 3)"
-              :key="group.country"
-              class="pointer-events-auto w-48 cursor-pointer rounded-[1.35rem] border border-white/10 bg-slate-950/55 p-3.5 shadow-[0_12px_34px_rgba(2,6,23,0.32)] backdrop-blur-md transition hover:bg-white/5 focus:outline-none"
-              tabindex="0"
-              role="button"
-              @click="openFeedItem(group.lead)"
-              @keydown.enter.prevent="openFeedItem(group.lead)"
-              @keydown.space.prevent="openFeedItem(group.lead)"
-            >
-              <div class="flex items-center justify-between gap-2">
-                <p class="text-[13px] font-semibold text-white">{{ group.country }}</p>
-                <span class="rounded-full bg-cyan-300/10 px-2 py-1 text-[11px] text-cyan-100">
-                  {{ group.count }}
-                </span>
-              </div>
-              <p class="mt-2 text-xs uppercase tracking-[0.22em] text-slate-400">
-                Avg signal {{ group.averageScore }}
-              </p>
-              <div class="mt-2.5">
-                <HtmlContent :html="getPreviewHtml(group.lead)" variant="preview" />
-              </div>
-              <div
-                class="mt-2 flex items-center justify-between gap-2 border-t border-white/8 pt-2 text-[11px] text-slate-400"
-              >
-                <span>{{ formatRelativeDate(group.lead.pubDate) }}</span>
-                <span class="inline-flex items-center gap-1 text-cyan-100/80">
-                  <Icon name="mdi:arrow-top-right" class="size-3.5" />
-                  Details
-                </span>
+                News is being collected. As soon as the full feed resolves, a random story will be
+                shown here and rotated every 10 seconds.
               </div>
             </div>
           </div>
@@ -787,6 +850,7 @@ watch(
             v-for="item in visibleItems"
             :key="item.link"
             class="group cursor-pointer rounded-[1.35rem] border border-white/8 bg-white/3 p-3.5 transition hover:border-cyan-300/30 hover:bg-cyan-300/5"
+            :class="isItemFromToday(item) ? 'border-emerald-300/30!' : ''"
             tabindex="0"
             role="button"
             @mouseenter="previewItem(item)"
@@ -804,6 +868,27 @@ watch(
                   <Icon name="mdi:newspaper-variant-outline" class="size-3.5" />
                   {{ formatSource(item.sourceHost) }}
                 </span>
+                <span
+                  class="inline-flex items-center gap-1 rounded-full px-2 py-1 tracking-normal normal-case"
+                  :class="
+                    isItemSeen(item)
+                      ? 'bg-slate-200/10 text-slate-200/85'
+                      : 'bg-cyan-300/12 text-cyan-50'
+                  "
+                >
+                  <Icon
+                    :name="isItemSeen(item) ? 'mdi:eye-outline' : 'mdi:eye-off-outline'"
+                    class="size-3.5"
+                  />
+                  {{ isItemSeen(item) ? "Seen" : "Unseen" }}
+                </span>
+                <span
+                  v-if="isItemFromToday(item)"
+                  class="inline-flex items-center gap-1 rounded-full bg-emerald-300/14 px-2 py-1 tracking-normal text-emerald-50 normal-case"
+                >
+                  <Icon name="mdi:calendar-today" class="size-3.5" />
+                  Today
+                </span>
                 <span>{{ formatRelativeDate(item.pubDate) }}</span>
               </div>
 
@@ -812,7 +897,7 @@ watch(
                 target="_blank"
                 rel="noreferrer noopener"
                 class="block text-[15px] font-medium leading-5.5 text-white transition group-hover:text-cyan-100"
-                @click.stop
+                @click.stop="handleOpenOriginalItem(item)"
               >
                 {{ item.title }}
               </a>
@@ -935,6 +1020,27 @@ watch(
               {{ getCountryLabel(activeFeedItem) }}
             </span>
             <span
+              class="inline-flex items-center gap-1 rounded-full border px-2.5 py-1"
+              :class="
+                isItemSeen(activeFeedItem)
+                  ? 'border-slate-200/10 bg-slate-200/10 text-slate-200/85'
+                  : 'border-cyan-300/20 bg-cyan-300/10 text-cyan-50'
+              "
+            >
+              <Icon
+                :name="isItemSeen(activeFeedItem) ? 'mdi:eye-outline' : 'mdi:eye-off-outline'"
+                class="size-3.5"
+              />
+              {{ isItemSeen(activeFeedItem) ? "Seen" : "Unseen" }}
+            </span>
+            <span
+              v-if="isItemFromToday(activeFeedItem)"
+              class="inline-flex items-center gap-1 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2.5 py-1 text-emerald-50"
+            >
+              <Icon name="mdi:calendar-today" class="size-3.5" />
+              Today
+            </span>
+            <span
               class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1"
             >
               <Icon name="mdi:star-four-points-outline" class="size-3.5" />
@@ -1015,6 +1121,7 @@ watch(
               target="_blank"
               rel="noreferrer noopener"
               class="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5 text-[11px] font-medium text-cyan-50 transition hover:border-cyan-300/45 hover:bg-cyan-300/15"
+              @click="handleOpenOriginalItem(activeFeedItem)"
             >
               <Icon name="mdi:open-in-new" class="size-3.5" />
               Open original article
