@@ -578,11 +578,11 @@ watch(
       <div class="pointer-events-none absolute inset-x-0 top-38 z-30 px-4 sm:px-5">
         <div class="grid gap-4 lg:grid-cols-[minmax(0,24rem)_1fr] lg:items-start">
           <div
-            class="pointer-events-auto rounded-3xl border border-white/10 bg-slate-950/65 p-4 shadow-[0_15px_45px_rgba(2,6,23,0.42)] backdrop-blur-md"
+            class="pointer-events-auto rounded-3xl border border-white/10 bg-slate-950/65 shadow-[0_15px_45px_rgba(2,6,23,0.42)] backdrop-blur-md"
           >
             <div
               v-if="spotlightStory"
-              class="cursor-pointer rounded-2xl transition hover:bg-white/3 focus:outline-none"
+              class="cursor-pointer rounded-2xl transition hover:bg-white/3 p-4 focus:outline-none"
               tabindex="0"
               role="button"
               @click="openFeedItem(spotlightStory)"
@@ -963,7 +963,10 @@ watch(
             </div>
             <div class="rounded-2xl border border-white/8 bg-white/4 p-3">
               <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Publisher</p>
-              <p class="mt-2 text-[13px] font-medium text-white">
+              <p
+                class="mt-2 text-[13px] font-medium text-white text-ellipsis overflow-hidden whitespace-nowrap"
+                :title="activeFeedItem.source"
+              >
                 {{ activeFeedItem.source }}
               </p>
             </div>
