@@ -221,31 +221,27 @@ const spotlightStory = computed(() => {
 });
 
 const activeMapCountries = computed<WorldMapCountryName[]>(() => {
-  return spotlightGroup.value ? [spotlightGroup.value.country] : [];
+  return countryGroups.value.map((group) => group.country);
 });
 
 const visibleItems = computed(() => {
-  if (hasManualCountrySelection.value && selectedCountry.value) {
-    return loadedItems.value.filter((item) => item.country === selectedCountry.value);
-  }
-
   return loadedItems.value;
 });
 
 const visibleItemsTitle = computed(() => {
   if (hasManualCountrySelection.value && selectedCountry.value) {
-    return `${selectedCountry.value} dispatches`;
+    return "All dispatches";
   }
 
-  return "Latest dispatches";
+  return "All dispatches";
 });
 
 const visibleItemsHint = computed(() => {
   if (hasManualCountrySelection.value && selectedCountry.value) {
-    return "Map and feed are locked to your selected country.";
+    return `Feed stays global while the spotlight is locked to ${selectedCountry.value}.`;
   }
 
-  return "Infinite feed sourced from the tech RSS pipeline.";
+  return "Infinite feed sourced from the tech RSS pipeline, with country origin shown on each card.";
 });
 
 const hasMore = computed(() => {
@@ -433,7 +429,7 @@ watch(
             @click="clearCountrySpotlight"
           >
             <Icon name="mdi:crosshairs-gps" class="size-4" />
-            <span>Release map lock</span>
+            <span>Release spotlight lock</span>
           </button>
         </div>
       </div>
