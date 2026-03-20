@@ -1,15 +1,42 @@
 @import "tailwindcss";
 
+:root {
+  color-scheme: dark;
+  --page-ink: #e2e8f0;
+  --page-bg: #040816;
+}
+
 html,
 body,
 #__nuxt {
-  @apply h-full min-h-dvh w-full;
+  width: 100%;
+  min-height: 100dvh;
+  height: 100%;
 }
 
 html {
-  @apply bg-zinc-950;
+  background: var(--page-bg);
+  color: var(--page-ink);
+  font-family: "IBM Plex Sans", "Segoe UI Variable", "Inter", sans-serif;
 }
 
 body {
-  @apply text-slate-300 bg-linear-to-b from-zinc-950 to-zinc-900/75;
+  color: rgb(203 213 225);
+  background:
+    radial-gradient(circle at top left, rgba(45, 212, 191, 0.14), transparent 22%),
+    radial-gradient(circle at 78% 12%, rgba(251, 191, 36, 0.12), transparent 18%),
+    radial-gradient(circle at bottom center, rgba(14, 165, 233, 0.1), transparent 28%),
+    linear-gradient(180deg, #020617 0%, #06111f 42%, #07131e 100%);
+}
+
+a {
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.3);
+  color: white;
 }

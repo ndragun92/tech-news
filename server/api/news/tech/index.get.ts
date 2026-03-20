@@ -89,11 +89,11 @@ export default defineEventHandler(async (event) => {
       confidence: "high",
       hint: "Known publisher mapping for Tailwind Labs.",
     },
-    "nodejs.org": {
-      country: "United States",
-      confidence: "medium",
-      hint: "Known publisher mapping for the Node.js foundation infrastructure.",
-    },
+    // "nodejs.org": {
+    //   country: "United States",
+    //   confidence: "medium",
+    //   hint: "Known publisher mapping for the Node.js foundation infrastructure.",
+    // },
     "javascriptweekly.com": {
       country: "United Kingdom",
       confidence: "medium",
@@ -379,7 +379,7 @@ export default defineEventHandler(async (event) => {
     "https://nuxt.com/blog/rss.xml",
     "https://blog.vuejs.org/feed.xml",
     "https://tailwindcss.com/blog/rss.xml",
-    "https://nodejs.org/en/feed/blog.xml",
+    // "https://nodejs.org/en/feed/blog.xml",
     "https://javascriptweekly.com/rss",
     "https://css-tricks.com/feed",
     "https://www.smashingmagazine.com/feed",

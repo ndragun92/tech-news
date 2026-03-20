@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <div class="relative size-full">
     <svg
       ref="svgRef"
-      class="fixed inset-0 size-full"
+      class="absolute inset-0 size-full"
       enable-background="new 0 0 1000 647"
       preserveAspectRatio="xMidYMid meet"
       pretty_print="False"
