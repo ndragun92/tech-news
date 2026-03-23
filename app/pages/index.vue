@@ -1006,6 +1006,25 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
     </aside>
   </section>
 
+  <div
+    class="pointer-events-none fixed inset-x-0 bottom-3 z-70 flex justify-center px-4 sm:bottom-4"
+  >
+    <a
+      href="https://nemanjadragun.com"
+      target="_blank"
+      rel="noreferrer noopener"
+      class="pointer-events-auto inline-flex max-w-full items-center gap-2 rounded-full border border-cyan-300/30 bg-[linear-gradient(140deg,rgba(5,10,20,0.94),rgba(8,25,34,0.92),rgba(32,14,10,0.9))] px-4 py-2 text-[11px] font-medium text-slate-100 shadow-[0_10px_34px_rgba(2,6,23,0.45)] backdrop-blur-md transition duration-200 hover:border-amber-300/45 hover:text-white"
+      aria-label="Visit nemanjadragun.com"
+    >
+      <span
+        class="inline-flex size-6 items-center justify-center rounded-full bg-white/8 text-[12px]"
+      >
+        ✨
+      </span>
+      <span class="truncate tracking-[0.01em]">Made with ❤️ by Nemanja Dragun</span>
+    </a>
+  </div>
+
   <Teleport to="body">
     <div
       v-if="activeFeedItem"
