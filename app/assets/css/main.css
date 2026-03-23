@@ -2,8 +2,10 @@
 
 :root {
   color-scheme: dark;
-  --page-ink: #e2e8f0;
-  --page-bg: #040816;
+  --page-ink: #e5edf7;
+  --page-bg: #050816;
+  --font-sans: "IBM Plex Sans", "Segoe UI Variable", "Helvetica Neue", sans-serif;
+  --font-serif: "Canela", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
 }
 
 html,
@@ -17,16 +19,16 @@ body,
 html {
   background: var(--page-bg);
   color: var(--page-ink);
-  font-family: "IBM Plex Sans", "Segoe UI Variable", "Inter", sans-serif;
+  font-family: var(--font-sans);
 }
 
 body {
-  color: rgb(203 213 225);
+  color: rgb(226 232 240);
   background:
-    radial-gradient(circle at top left, rgba(45, 212, 191, 0.14), transparent 22%),
-    radial-gradient(circle at 78% 12%, rgba(251, 191, 36, 0.12), transparent 18%),
-    radial-gradient(circle at bottom center, rgba(14, 165, 233, 0.1), transparent 28%),
-    linear-gradient(180deg, #020617 0%, #06111f 42%, #07131e 100%);
+    radial-gradient(circle at top left, rgba(34, 211, 238, 0.12), transparent 18%),
+    radial-gradient(circle at 82% 12%, rgba(251, 191, 36, 0.1), transparent 18%),
+    radial-gradient(circle at bottom center, rgba(59, 130, 246, 0.08), transparent 28%),
+    linear-gradient(180deg, #040816 0%, #07101c 42%, #050915 100%);
 }
 
 a {
@@ -37,47 +39,104 @@ a {
 }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.3);
+  background: rgba(34, 211, 238, 0.28);
   color: white;
 }
 
-.floating-credit {
+.news-serif {
+  font-family: var(--font-serif);
+}
+
+.news-surface {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   background:
-    linear-gradient(135deg, rgba(15, 23, 42, 0.82), rgba(8, 15, 30, 0.72)),
-    radial-gradient(circle at top left, rgba(251, 191, 36, 0.18), transparent 36%),
-    radial-gradient(circle at bottom right, rgba(34, 211, 238, 0.16), transparent 42%);
+    linear-gradient(180deg, rgba(8, 14, 25, 0.96), rgba(5, 10, 20, 0.92)),
+    radial-gradient(circle at top left, rgba(34, 211, 238, 0.06), transparent 30%);
   box-shadow:
-    0 16px 40px rgba(2, 6, 23, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(18px);
+    0 22px 60px rgba(2, 6, 23, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
 }
 
-.floating-credit::before {
+.news-item-shell {
+  position: relative;
+  overflow: hidden;
+}
+
+.news-item-shell::before {
   content: "";
   position: absolute;
-  inset: 1px;
-  border-radius: 9999px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.05),
-    transparent 45%,
-    rgba(255, 255, 255, 0.08)
-  );
-  opacity: 0.7;
-  pointer-events: none;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.3);
+  opacity: 0;
+  transition:
+    opacity 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
-.floating-credit__name {
-  position: relative;
-  z-index: 1;
-  color: #f8fafc;
-  text-decoration: none;
-  text-shadow: 0 0 18px rgba(34, 211, 238, 0.25);
+.news-item-shell--today {
+  border-color: rgba(52, 211, 153, 0.24);
+  background:
+    linear-gradient(180deg, rgba(4, 18, 18, 0.96), rgba(4, 12, 20, 0.94)),
+    radial-gradient(circle at top left, rgba(52, 211, 153, 0.14), transparent 34%);
+  box-shadow:
+    0 24px 64px rgba(2, 6, 23, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 1px rgba(52, 211, 153, 0.08);
 }
 
-.floating-credit__name:hover {
-  color: #67e8f9;
+.news-item-shell--today::before {
+  background: linear-gradient(180deg, rgba(110, 231, 183, 0.98), rgba(16, 185, 129, 0.58));
+  box-shadow: 0 0 24px rgba(16, 185, 129, 0.34);
+  opacity: 1;
+}
+
+.news-item-shell--unread {
+  border-color: rgba(251, 191, 36, 0.18);
+  background:
+    linear-gradient(180deg, rgba(18, 13, 5, 0.66), rgba(7, 10, 18, 0.92)),
+    radial-gradient(circle at top left, rgba(251, 191, 36, 0.09), transparent 32%);
+}
+
+.news-item-shell--unread::before {
+  background: linear-gradient(180deg, rgba(252, 211, 77, 0.94), rgba(245, 158, 11, 0.52));
+  box-shadow: 0 0 22px rgba(245, 158, 11, 0.28);
+  opacity: 1;
+}
+
+.news-item-shell--seen {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 14px 38px rgba(2, 6, 23, 0.18);
+}
+
+.news-item-shell--seen::before {
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.6), rgba(71, 85, 105, 0.32));
+  opacity: 0.85;
+}
+
+.news-item-panel--today {
+  border-color: rgba(52, 211, 153, 0.18);
+  background:
+    linear-gradient(180deg, rgba(5, 22, 20, 0.88), rgba(3, 10, 18, 0.92)),
+    radial-gradient(circle at top left, rgba(52, 211, 153, 0.1), transparent 36%);
+}
+
+.news-item-panel--unread {
+  border-color: rgba(251, 191, 36, 0.14);
+  background:
+    linear-gradient(180deg, rgba(22, 15, 6, 0.7), rgba(2, 8, 18, 0.92)),
+    radial-gradient(circle at top left, rgba(251, 191, 36, 0.08), transparent 34%);
+}
+
+.news-item-panel--seen {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(2, 6, 23, 0.42);
 }

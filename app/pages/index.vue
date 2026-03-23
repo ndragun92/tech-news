@@ -1,16 +1,6 @@
 <script setup lang="ts">
 import sanitizeHtml from "sanitize-html";
-import { countries } from "~/utils/countries.utils";
-
-type CountryInferenceConfidence = "high" | "medium" | "low";
-type CountryInferenceMethod = "publisher" | "domain" | "feed-language" | "unknown";
-
-type CountryDetails = {
-  country: string | null;
-  confidence: CountryInferenceConfidence;
-  method: CountryInferenceMethod;
-  hint: string;
-};
+import { mergeProps } from "vue";
 
 type TechNewsItem = {
   source: string;
@@ -19,8 +9,6 @@ type TechNewsItem = {
   link: string;
   pubDate: string;
   description: string;
-  country: string | null;
-  countryDetails: CountryDetails;
   score: number;
 };
 
@@ -32,44 +20,46 @@ type TechNewsResponse = {
   data: TechNewsItem[];
 };
 
-type CountrySelection = {
-  id: string;
-  name: string;
+type CountStat = {
+  label: string;
+  value: number;
+  note: string;
 };
 
-type WorldMapCountryName = (typeof countries)[number];
-
-type CountryGroup = {
-  country: WorldMapCountryName;
+type RankedLabel = {
+  label: string;
   count: number;
-  lead: TechNewsItem;
-  items: TechNewsItem[];
-  averageScore: number;
 };
 
 const PAGE_SIZE = 12;
-const WORLD_COUNTRY_SET = new Set<string>(countries);
+const MONITORED_SOURCES = [
+  "nuxt.com",
+  "blog.vuejs.org",
+  "tailwindcss.com",
+  "javascriptweekly.com",
+  "css-tricks.com",
+  "smashingmagazine.com",
+  "blog.risingstack.com",
+  "github.blog",
+  "dev.to",
+  "medium.com",
+  "stackoverflow.com",
+];
 const CALENDAR_DATE_FORMATTER = new Intl.DateTimeFormat("en-CA", {
   year: "numeric",
   month: "2-digit",
   day: "2-digit",
 });
 
-const feedRef = ref<HTMLElement | null>(null);
 const feedBottomRef = ref<HTMLElement | null>(null);
 const loadedItems = ref<TechNewsItem[]>([]);
 const currentPage = ref(0);
 const totalPages = ref(0);
 const totalItems = ref(0);
-const spotlightItems = ref<TechNewsItem[]>([]);
-const spotlightQueue = ref<string[]>([]);
 const seenNewsLinks = useLocalStorage<string[]>("tech-news-seen-links", []);
 const activeFeedItem = ref<TechNewsItem | null>(null);
-const spotlightStory = ref<TechNewsItem | null>(null);
 const isLoadingMore = ref(false);
 const isRefreshing = ref(false);
-const spotlightIndex = ref(0);
-const selectedCountry = ref<WorldMapCountryName | null>(null);
 
 const createEmptyResponse = (): TechNewsResponse => ({
   page: 1,
@@ -97,10 +87,6 @@ const {
     default: createEmptyResponse,
   }
 );
-
-const isWorldMapCountryName = (value: string | null | undefined): value is WorldMapCountryName => {
-  return Boolean(value && WORLD_COUNTRY_SET.has(value));
-};
 
 const getPublishedTimestamp = (value: string) => {
   const timestamp = Date.parse(value);
@@ -144,11 +130,48 @@ const formatRelativeDate = (value: string) => {
   return rtf.format(Math.round(diffInHours / 24), "day");
 };
 
+const getCalendarDateKey = (value: string) => {
+  const timestamp = getPublishedTimestamp(value);
+
+  if (!timestamp) {
+    return "";
+  }
+
+  return CALENDAR_DATE_FORMATTER.format(timestamp);
+};
+
+const isItemFromToday = (item: TechNewsItem) => {
+  const itemDate = getCalendarDateKey(item.pubDate);
+
+  return Boolean(itemDate) && itemDate === CALENDAR_DATE_FORMATTER.format(Date.now());
+};
+
 const getDescriptionText = (value: string) => {
   return value
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+};
+
+const summarize = (value: string, maxLength = 180) => {
+  const strippedValue = getDescriptionText(value);
+
+  if (!strippedValue) {
+    return "No summary was provided, but the original article is available.";
+  }
+
+  if (strippedValue.length <= maxLength) {
+    return strippedValue;
+  }
+
+  return `${strippedValue.slice(0, Math.max(maxLength - 3, 0)).trimEnd()}...`;
+};
+
+const normalizeCompactHtmlSource = (value: string) => {
+  return value
+    .replace(/<\s*\/\s*(p|li|blockquote|pre|ul|ol|h[1-6])\s*>/gi, "<br />")
+    .replace(/<\s*(p|li|blockquote|pre|ul|ol|h[1-6])(?:\s[^>]*)?>/gi, "")
+    .replace(/(?:<br\s*\/?>\s*){3,}/gi, "<br /><br />");
 };
 
 const renderDescriptionHtml = (value: string) => {
@@ -190,8 +213,8 @@ const renderDescriptionHtml = (value: string) => {
 };
 
 const renderPreviewHtml = (value: string) => {
-  const sanitizedValue = sanitizeHtml(value, {
-    allowedTags: ["p", "br", "strong", "em", "b", "i", "a"],
+  const sanitizedValue = sanitizeHtml(normalizeCompactHtmlSource(value), {
+    allowedTags: ["br", "strong", "em", "b", "i", "a", "code"],
     allowedAttributes: {
       a: ["href", "target", "rel"],
     },
@@ -201,13 +224,9 @@ const renderPreviewHtml = (value: string) => {
         target: "_blank",
         rel: "noreferrer noopener",
       }),
-      p: (_tagName, attribs) => ({
-        tagName: "p",
-        attribs,
-      }),
     },
   })
-    .replace(/<p>\s*<\/p>/g, "")
+    .replace(/(?:<br\s*\/?>\s*){3,}/gi, "<br /><br />")
     .trim();
 
   if (sanitizedValue) {
@@ -219,44 +238,88 @@ const renderPreviewHtml = (value: string) => {
   return textFallback ? `<p>${sanitizeHtml(textFallback)}</p>` : "";
 };
 
-const summarize = (value: string) => {
-  const strippedValue = getDescriptionText(value);
-
-  if (!strippedValue) {
-    return "Summary unavailable, but the original article is ready to open.";
-  }
-
-  if (strippedValue.length <= 180) {
-    return strippedValue;
-  }
-
-  return `${strippedValue.slice(0, 177).trimEnd()}...`;
-};
-
 const formatSource = (value: string) => {
   return value.replace(/^www\./, "");
 };
 
-const getCalendarDateKey = (value: string) => {
-  const timestamp = getPublishedTimestamp(value);
+const descriptionContentClass =
+  "mt-3 space-y-4 text-[13px] leading-6 text-slate-300/88 [&_a]:font-medium [&_a]:text-cyan-200 [&_a]:underline [&_a]:decoration-cyan-300/40 [&_a]:underline-offset-3 [&_blockquote]:border-l-2 [&_blockquote]:border-cyan-400/30 [&_blockquote]:bg-slate-900/70 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:italic [&_blockquote]:text-slate-200 [&_code]:rounded-md [&_code]:transparent [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[12px] [&_em]:text-white [&_li]:marker:text-cyan-300/70 [&_ol]:my-4 [&_ol]:space-y-2 [&_ol]:pl-5 [&_p]:my-0 [&_pre]:overflow-x-auto [&_pre]:rounded-3xl [&_pre]:border [&_pre]:border-white/8 [&_pre]:bg-slate-950 [&_pre]:p-4 [&_pre]:text-[12px] [&_pre]:text-slate-100 [&_strong]:font-semibold [&_strong]:text-white [&_ul]:my-4 [&_ul]:space-y-2 [&_ul]:pl-5";
 
-  if (!timestamp) {
-    return "";
-  }
+const leadContentClass =
+  "mt-3 overflow-hidden text-[13px] leading-6 text-slate-300/88 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:6] [&_a]:font-medium [&_a]:text-cyan-200 [&_a]:underline [&_a]:decoration-cyan-300/35 [&_a]:underline-offset-3 [&_code]:rounded-md [&_code]:bg-transparent [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[12px] [&_em]:text-white [&_strong]:font-semibold [&_strong]:text-white";
 
-  return CALENDAR_DATE_FORMATTER.format(timestamp);
-};
+const cardPreviewContentClass =
+  "overflow-hidden text-[12px] leading-5 text-slate-400/86 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4] [&_a]:font-medium [&_a]:text-cyan-100 [&_a]:underline [&_a]:decoration-cyan-300/25 [&_a]:underline-offset-2 [&_code]:rounded-md [&_code]:bg-transparent [&_code]:px-1 [&_code]:py-0.5 [&_em]:text-slate-200 [&_strong]:font-semibold [&_strong]:text-slate-50";
 
-const isItemFromToday = (item: TechNewsItem) => {
-  const itemDate = getCalendarDateKey(item.pubDate);
-
-  return Boolean(itemDate) && itemDate === CALENDAR_DATE_FORMATTER.format(Date.now());
-};
+const HtmlContent = defineComponent({
+  name: "HtmlContent",
+  props: {
+    html: {
+      type: String,
+      required: true,
+    },
+    variant: {
+      type: String as PropType<"detail" | "lead" | "preview">,
+      default: "detail",
+    },
+  },
+  setup(props, { attrs }) {
+    return () =>
+      h(
+        "div",
+        mergeProps(attrs, {
+          class:
+            props.variant === "preview"
+              ? cardPreviewContentClass
+              : props.variant === "lead"
+                ? leadContentClass
+                : descriptionContentClass,
+          innerHTML: props.html,
+        })
+      );
+  },
+});
 
 const seenNewsLookup = computed(() => new Set(seenNewsLinks.value));
 
 const isItemSeen = (item: TechNewsItem) => {
   return seenNewsLookup.value.has(item.link);
+};
+
+const getReadStateLabel = (item: TechNewsItem) => {
+  return isItemSeen(item) ? "Opened" : "Unread";
+};
+
+const getReadStateIcon = (item: TechNewsItem) => {
+  return isItemSeen(item) ? "mdi:eye-outline" : "mdi:bookmark-outline";
+};
+
+const getReadStateClass = (item: TechNewsItem) => {
+  return isItemSeen(item)
+    ? "border-white/8 bg-white/5 text-slate-400"
+    : "border-amber-300/25 bg-amber-300/10 text-amber-100";
+};
+
+const getItemShellClass = (item: TechNewsItem) => {
+  if (isItemFromToday(item)) {
+    return "news-item-shell news-item-shell--today";
+  }
+
+  return isItemSeen(item)
+    ? "news-item-shell news-item-shell--seen"
+    : "news-item-shell news-item-shell--unread";
+};
+
+const getItemPanelClass = (item: TechNewsItem) => {
+  if (isItemFromToday(item)) {
+    return "news-item-panel--today";
+  }
+
+  return isItemSeen(item) ? "news-item-panel--seen" : "news-item-panel--unread";
+};
+
+const getItemTitleClass = (item: TechNewsItem) => {
+  return isItemSeen(item) ? "text-slate-200" : "text-white";
 };
 
 const markItemAsSeen = (item: TechNewsItem) => {
@@ -271,35 +334,116 @@ const handleOpenOriginalItem = (item: TechNewsItem) => {
   markItemAsSeen(item);
 };
 
-const getCountryLabel = (item: TechNewsItem) => {
-  return item.country ?? "Country unresolved";
+const openFeedItem = (item: TechNewsItem) => {
+  markItemAsSeen(item);
+  activeFeedItem.value = item;
 };
 
-const descriptionContentClass =
-  "mt-3 space-y-4 text-[14px] leading-7 text-slate-200/85 [&_a]:font-medium [&_a]:text-cyan-200 [&_a]:underline [&_a]:decoration-cyan-300/45 [&_a]:underline-offset-4 [&_blockquote]:border-l-2 [&_blockquote]:border-cyan-300/35 [&_blockquote]:bg-cyan-300/5 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:italic [&_blockquote]:text-slate-100/90 [&_code]:bg-transparent [&_code]:py-1.5 [&_code]:text-[13px] [&_em]:text-cyan-50/90 [&_li]:marker:text-cyan-200/70 [&_ol]:my-4 [&_ol]:space-y-2 [&_ol]:pl-5 [&_p]:my-0 [&_pre]:overflow-x-auto [&_pre]:rounded-2xl [&_pre]:border [&_pre]:border-white/8 [&_pre]:bg-slate-950/85 [&_pre]:p-4 [&_pre]:text-[13px] [&_strong]:font-semibold [&_strong]:text-white [&_ul]:my-4 [&_ul]:space-y-2 [&_ul]:pl-5";
+const closeFeedItem = () => {
+  activeFeedItem.value = null;
+};
 
-const cardPreviewContentClass =
-  "text-[12px] leading-4.5 text-slate-300/78 max-h-[3.6rem] overflow-hidden [&_a]:font-medium [&_a]:text-cyan-100/90 [&_a]:underline [&_a]:decoration-cyan-300/35 [&_a]:underline-offset-2 [&_em]:text-slate-100/90 [&_p]:m-0 [&_p:not(:first-child)]:hidden [&_strong]:font-semibold [&_strong]:text-white";
+const syncResponse = (response: TechNewsResponse, mode: "replace" | "append" = "replace") => {
+  loadedItems.value = mode === "append" ? [...loadedItems.value, ...response.data] : response.data;
+  currentPage.value = response.page;
+  totalPages.value = response.totalPages;
+  totalItems.value = response.total;
+};
 
-const HtmlContent = defineComponent({
-  name: "HtmlContent",
-  props: {
-    html: {
-      type: String,
-      required: true,
-    },
-    variant: {
-      type: String as PropType<"detail" | "preview">,
-      default: "detail",
-    },
+watch(
+  initialResponse,
+  (response) => {
+    if (!response) {
+      return;
+    }
+
+    syncResponse(response, "replace");
   },
-  setup(props) {
-    return () =>
-      h("div", {
-        class: props.variant === "preview" ? cardPreviewContentClass : descriptionContentClass,
-        innerHTML: props.html,
-      });
-  },
+  { immediate: true }
+);
+
+const hasMore = computed(() => {
+  return currentPage.value < totalPages.value;
+});
+
+const featuredStory = computed(() => {
+  return loadedItems.value[0] ?? null;
+});
+
+const sideStories = computed(() => {
+  return loadedItems.value.slice(1, 4);
+});
+
+const feedItems = computed(() => {
+  return loadedItems.value.slice(4);
+});
+
+const todayCount = computed(() => {
+  return loadedItems.value.filter((item) => isItemFromToday(item)).length;
+});
+
+const unseenCount = computed(() => {
+  return loadedItems.value.filter((item) => !isItemSeen(item)).length;
+});
+
+const sourceCount = computed(() => {
+  return new Set(loadedItems.value.map((item) => formatSource(item.sourceHost))).size;
+});
+
+const countByLabel = (values: Array<string | null | undefined>, fallbackLabel: string) => {
+  const counts = new Map<string, number>();
+
+  for (const value of values) {
+    const label = value?.trim() || fallbackLabel;
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries())
+    .map(([label, count]) => ({ label, count }))
+    .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
+};
+
+const topSources = computed<RankedLabel[]>(() => {
+  return countByLabel(
+    loadedItems.value.map((item) => formatSource(item.sourceHost)),
+    "Unknown source"
+  ).slice(0, 6);
+});
+
+const countStats = computed<CountStat[]>(() => {
+  return [
+    {
+      label: "Today",
+      value: todayCount.value,
+      note: "new stories today",
+    },
+    {
+      label: "Unread",
+      value: unseenCount.value,
+      note: "stories not opened yet",
+    },
+    {
+      label: "Sources",
+      value: sourceCount.value,
+      note: "publishers visible now",
+    },
+  ];
+});
+
+const leadSummary = computed(() => {
+  if (!featuredStory.value) {
+    return "The feed is empty right now. Refresh when the pipeline has fresh stories.";
+  }
+
+  return renderPreviewHtml(featuredStory.value.description);
+});
+
+const feedSummary = computed(() => {
+  if (!totalItems.value) {
+    return "A ranked feed for following updates across the selected sources.";
+  }
+
+  return `${totalItems.value} ranked stories across ${sourceCount.value} active sources. ${unseenCount.value} are still unread.`;
 });
 
 const activeFeedItemDescriptionHtml = computed(() => {
@@ -312,222 +456,6 @@ const activeFeedItemDescriptionHtml = computed(() => {
 
 const getPreviewHtml = (item: TechNewsItem) => {
   return renderPreviewHtml(item.description);
-};
-
-const shuffleItems = (items: TechNewsItem[], blockedFirstLink?: string | null) => {
-  const shuffledItems = [...items];
-
-  for (let index = shuffledItems.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    const currentItem = shuffledItems[index] as TechNewsItem;
-
-    shuffledItems[index] = shuffledItems[swapIndex] as TechNewsItem;
-    shuffledItems[swapIndex] = currentItem;
-  }
-
-  if (blockedFirstLink && shuffledItems.length > 1 && shuffledItems[0]?.link === blockedFirstLink) {
-    const nextIndex = shuffledItems.findIndex((item) => item.link !== blockedFirstLink);
-
-    if (nextIndex > 0) {
-      const firstItem = shuffledItems[0] as TechNewsItem;
-
-      shuffledItems[0] = shuffledItems[nextIndex] as TechNewsItem;
-      shuffledItems[nextIndex] = firstItem;
-    }
-  }
-
-  return shuffledItems;
-};
-
-const refillSpotlightQueue = () => {
-  spotlightQueue.value = shuffleItems(spotlightItems.value, spotlightStory.value?.link).map(
-    (item) => item.link
-  );
-};
-
-const rotateSpotlightStory = () => {
-  if (!spotlightItems.value.length) {
-    spotlightQueue.value = [];
-    spotlightStory.value = null;
-    return;
-  }
-
-  if (!spotlightQueue.value.length) {
-    refillSpotlightQueue();
-  }
-
-  const nextLink = spotlightQueue.value.shift();
-
-  spotlightStory.value =
-    spotlightItems.value.find((item) => item.link === nextLink) ?? spotlightItems.value[0] ?? null;
-};
-
-const resetSpotlightRotation = (items: TechNewsItem[]) => {
-  spotlightItems.value = items;
-  spotlightQueue.value = [];
-  rotateSpotlightStory();
-};
-
-const syncSpotlightFeed = async (requestedTotal?: number) => {
-  const initialLimit = Math.max(requestedTotal ?? totalItems.value ?? PAGE_SIZE, PAGE_SIZE);
-  let response = await $fetch<TechNewsResponse>("/api/news/tech", {
-    query: {
-      page: 1,
-      limit: initialLimit,
-    },
-  });
-
-  if (response.total > response.data.length) {
-    response = await $fetch<TechNewsResponse>("/api/news/tech", {
-      query: {
-        page: 1,
-        limit: response.total,
-      },
-    });
-  }
-
-  resetSpotlightRotation(response.data);
-};
-
-const syncResponse = (response: TechNewsResponse, mode: "replace" | "append" = "replace") => {
-  loadedItems.value = mode === "append" ? [...loadedItems.value, ...response.data] : response.data;
-  currentPage.value = response.page;
-  totalPages.value = response.totalPages;
-  totalItems.value = response.total;
-};
-
-watch(
-  initialResponse,
-  async (response) => {
-    if (!response) {
-      return;
-    }
-
-    syncResponse(response, "replace");
-    await syncSpotlightFeed(response.total);
-  },
-  { immediate: true }
-);
-
-const geoTaggedItems = computed(() => {
-  return loadedItems.value.filter((item) => isWorldMapCountryName(item.country));
-});
-
-const countryGroups = computed<CountryGroup[]>(() => {
-  const grouped = new Map<WorldMapCountryName, TechNewsItem[]>();
-
-  for (const item of geoTaggedItems.value) {
-    const country = item.country;
-
-    if (!isWorldMapCountryName(country)) {
-      continue;
-    }
-
-    const existingItems = grouped.get(country) ?? [];
-    existingItems.push(item);
-    grouped.set(country, existingItems);
-  }
-
-  return Array.from(grouped.entries())
-    .map(([country, items]) => ({
-      country,
-      count: items.length,
-      lead: items[0] as TechNewsItem,
-      items,
-      averageScore: Math.round(items.reduce((total, item) => total + item.score, 0) / items.length),
-    }))
-    .sort(
-      (left, right) =>
-        right.count - left.count ||
-        getPublishedTimestamp(right.lead.pubDate) - getPublishedTimestamp(left.lead.pubDate)
-    );
-});
-
-const activeMapCountries = computed<WorldMapCountryName[]>(() => {
-  return countryGroups.value.map((group) => group.country);
-});
-
-const visibleItems = computed(() => {
-  return loadedItems.value;
-});
-
-const visibleItemsTitle = computed(() => {
-  if (selectedCountry.value) {
-    return "All dispatches";
-  }
-
-  return "All dispatches";
-});
-
-const visibleItemsHint = computed(() => {
-  if (selectedCountry.value) {
-    return `Feed stays global while the spotlight is locked to ${selectedCountry.value}.`;
-  }
-
-  return "Infinite feed sourced from the tech RSS pipeline, with country origin shown on each card.";
-});
-
-const hasMore = computed(() => {
-  return currentPage.value < totalPages.value;
-});
-
-const { y: feedScrollTop } = useScroll(feedRef);
-
-const mappedCountryCount = computed(() => countryGroups.value.length);
-const unmappedItemCount = computed(() => {
-  return loadedItems.value.filter((item) => !isWorldMapCountryName(item.country)).length;
-});
-
-const setCountrySpotlight = (country: WorldMapCountryName) => {
-  const groupIndex = countryGroups.value.findIndex((group) => group.country === country);
-
-  if (groupIndex === -1) {
-    return;
-  }
-
-  spotlightIndex.value = groupIndex;
-  selectedCountry.value = country;
-};
-
-const clearCountrySpotlight = () => {
-  selectedCountry.value = null;
-};
-
-const handleMapSelect = (country: CountrySelection) => {
-  if (!isWorldMapCountryName(country.name)) {
-    return;
-  }
-
-  setCountrySpotlight(country.name);
-};
-
-const previewItem = (item: TechNewsItem) => {
-  if (!isWorldMapCountryName(item.country)) {
-    return;
-  }
-
-  const groupIndex = countryGroups.value.findIndex((group) => group.country === item.country);
-
-  if (groupIndex !== -1) {
-    spotlightIndex.value = groupIndex;
-  }
-};
-
-const openItemCountry = (item: TechNewsItem) => {
-  if (!isWorldMapCountryName(item.country)) {
-    return;
-  }
-
-  setCountrySpotlight(item.country);
-};
-
-const openFeedItem = (item: TechNewsItem) => {
-  markItemAsSeen(item);
-  activeFeedItem.value = item;
-};
-
-const closeFeedItem = () => {
-  activeFeedItem.value = null;
 };
 
 const loadMore = async () => {
@@ -572,25 +500,12 @@ useIntersectionObserver(
       return;
     }
 
-    if (feedScrollTop.value <= 16) {
-      return;
-    }
-
     void loadMore();
   },
   {
-    root: feedRef,
-    threshold: 0.35,
+    threshold: 0.2,
   }
 );
-
-useIntervalFn(() => {
-  if (!spotlightItems.value.length) {
-    return;
-  }
-
-  rotateSpotlightStory();
-}, 10_000);
 
 useEventListener(document, "keydown", (event: KeyboardEvent) => {
   if (event.key !== "Escape" || !activeFeedItem.value) {
@@ -599,379 +514,453 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
 
   closeFeedItem();
 });
-
-watch(
-  countryGroups,
-  (groups) => {
-    if (groups.length === 0) {
-      spotlightIndex.value = 0;
-      clearCountrySpotlight();
-      return;
-    }
-
-    if (spotlightIndex.value >= groups.length) {
-      spotlightIndex.value = 0;
-    }
-
-    if (selectedCountry.value && !groups.some((group) => group.country === selectedCountry.value)) {
-      clearCountrySpotlight();
-    }
-  },
-  { immediate: true }
-);
 </script>
 
 <template>
-  <section
-    class="grid min-h-0 flex-1 gap-3 xl:h-full xl:grid-cols-[minmax(0,1.45fr)_23rem] xl:grid-rows-[minmax(0,1fr)]"
-  >
-    <div
-      class="relative order-2 flex min-h-120 flex-col overflow-hidden rounded-4xl border border-white/10 bg-[linear-gradient(150deg,rgba(10,16,24,0.96),rgba(11,18,30,0.88))] shadow-[0_30px_90px_rgba(3,8,20,0.45)] xl:order-1 xl:min-h-0 xl:h-full"
-    >
-      <div
-        class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.18),transparent_28%),radial-gradient(circle_at_75%_18%,rgba(251,191,36,0.16),transparent_24%),radial-gradient(circle_at_50%_110%,rgba(14,165,233,0.14),transparent_38%)]"
-      />
-
-      <div
-        class="relative z-20 flex flex-wrap items-start justify-between gap-3 border-b border-white/10 px-4 py-4 sm:px-5"
-      >
-        <div class="space-y-2">
-          <p class="text-xs font-medium uppercase tracking-[0.32em] text-cyan-200/70">News</p>
-          <div>
-            <h1 class="text-xl font-semibold tracking-tight text-white sm:text-2xl">
-              Latest tech news, routed through geography
-            </h1>
-            <p class="mt-1.5 max-w-2xl text-[13px] leading-5 text-slate-300/80">
-              The map lights up publisher geographies while the lead card rotates through the full
-              feed in a non-repeating random order every 10 seconds.
-            </p>
-          </div>
-        </div>
-
-        <div class="flex flex-wrap gap-2 text-[11px] text-slate-200/80">
-          <button
-            type="button"
-            class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 transition hover:border-cyan-300/40 hover:bg-cyan-300/10"
-            @click="refreshNews"
-          >
-            <Icon name="mdi:refresh" class="size-3.5" />
-            <span>{{ isRefreshing ? "Refreshing" : "Refresh feed" }}</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="relative z-10 min-h-104 flex-1 pt-2 xl:min-h-0">
-        <UiWorldMap
-          :country-names="activeMapCountries"
-          :blink="activeMapCountries.length > 0"
-          @select="handleMapSelect"
+  <section class="grid gap-4 xl:grid-cols-[minmax(0,1.62fr)_20rem] xl:items-start">
+    <div class="space-y-4">
+      <header class="news-surface relative overflow-hidden rounded-4xl p-5 sm:p-6">
+        <div
+          class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_22%),radial-gradient(circle_at_85%_18%,rgba(251,191,36,0.12),transparent_22%),linear-gradient(180deg,rgba(10,17,30,0.92),rgba(7,12,22,0.82))]"
         />
-      </div>
 
-      <div class="pointer-events-none absolute inset-x-0 top-38 z-30 px-4 sm:px-5">
-        <div class="grid gap-4 lg:grid-cols-[minmax(0,24rem)_1fr] lg:items-start">
-          <div
-            class="pointer-events-auto rounded-3xl border border-white/10 bg-slate-950/65 shadow-[0_15px_45px_rgba(2,6,23,0.42)] backdrop-blur-md"
-          >
-            <div
-              v-if="spotlightStory"
-              class="cursor-pointer rounded-2xl p-4 transition hover:bg-white/3 focus:outline-none"
-              :class="
-                isItemFromToday(spotlightStory)
-                  ? 'border! border-emerald-300/30! bg-emerald-300/8! shadow-[0_16px_40px_rgba(16,185,129,0.12)]!'
-                  : ''
-              "
-              tabindex="0"
-              role="button"
-              @click="openFeedItem(spotlightStory)"
-              @keydown.enter.prevent="openFeedItem(spotlightStory)"
-              @keydown.space.prevent="openFeedItem(spotlightStory)"
-            >
-              <div class="flex items-center justify-between gap-3">
-                <div>
-                  <p class="mt-1.5 text-base font-semibold text-white">
-                    {{ spotlightStory.country ?? "Country unresolved" }}
-                  </p>
-                </div>
-              </div>
-
-              <div class="mt-4 space-y-3">
-                <a
-                  :href="spotlightStory.link"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  class="block text-lg font-medium leading-tight text-white transition hover:text-cyan-200"
-                  @click.stop="handleOpenOriginalItem(spotlightStory)"
+        <div class="relative z-10 space-y-5">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="max-w-3xl space-y-3">
+              <p class="text-[10px] font-semibold uppercase tracking-[0.34em] text-cyan-200/70">
+                Source tracker
+              </p>
+              <div class="space-y-2">
+                <h1
+                  class="news-serif max-w-3xl text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl"
                 >
-                  {{ spotlightStory.title }}
-                </a>
-
-                <HtmlContent :html="getPreviewHtml(spotlightStory)" variant="preview" />
-
-                <div class="flex flex-wrap items-center gap-2 text-xs text-slate-300/70">
-                  <span class="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1">
-                    <Icon name="mdi:radio-tower" class="size-3.5" />
-                    {{ formatSource(spotlightStory.sourceHost) }}
-                  </span>
-                  <span
-                    class="inline-flex items-center gap-1 rounded-full px-2.5 py-1"
-                    :class="
-                      isItemSeen(spotlightStory)
-                        ? 'bg-slate-200/10 text-slate-200/85'
-                        : 'bg-cyan-300/12 text-cyan-50'
-                    "
-                  >
-                    <Icon
-                      :name="isItemSeen(spotlightStory) ? 'mdi:eye-outline' : 'mdi:eye-off-outline'"
-                      class="size-3.5"
-                    />
-                    {{ isItemSeen(spotlightStory) ? "Seen" : "Unseen" }}
-                  </span>
-                  <span
-                    v-if="isItemFromToday(spotlightStory)"
-                    class="inline-flex items-center gap-1 rounded-full bg-emerald-300/14 px-2.5 py-1 text-emerald-50"
-                  >
-                    <Icon name="mdi:calendar-today" class="size-3.5" />
-                    Today
-                  </span>
-                  <span class="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1">
-                    <Icon name="mdi:clock-outline" class="size-3.5" />
-                    {{ formatRelativeDate(spotlightStory.pubDate) }}
-                  </span>
-                </div>
-
-                <div
-                  class="flex items-center justify-between gap-3 border-t border-white/8 pt-2 text-[11px] text-slate-400"
-                >
-                  <span>Open dispatch details</span>
-                  <span class="inline-flex items-center gap-1 text-cyan-100/80">
-                    <Icon name="mdi:arrow-top-right" class="size-3.5" />
-                    Details
-                  </span>
-                </div>
+                  A focused dark feed for staying on top of the sources that matter.
+                </h1>
+                <p class="max-w-2xl text-[13px] text-slate-300/78">
+                  Updates are ranked, cleaned, and laid out for scanning fast. No geography, no
+                  filler, just the freshest stories from the tracked tech publications.
+                </p>
               </div>
             </div>
 
-            <div v-else>
-              <div class="flex items-center justify-between gap-3">
-                <div>
-                  <p class="text-[11px] font-medium uppercase tracking-[0.3em] text-cyan-200/70">
-                    Random dispatch
-                  </p>
-                  <p class="mt-1.5 text-base font-semibold text-white">
-                    {{ spotlightStory?.country ?? "Loading live dispatches" }}
-                  </p>
-                </div>
-              </div>
-
-              <div
-                class="mt-4 rounded-2xl border border-dashed border-white/10 px-4 py-6 text-[13px] text-slate-300/70"
+            <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-300/76">
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-2 font-medium text-slate-100 transition hover:border-cyan-300/35 hover:bg-cyan-300/10"
+                @click="refreshNews"
               >
-                News is being collected. As soon as the full feed resolves, a random story will be
-                shown here and rotated every 10 seconds.
-              </div>
+                <Icon name="mdi:refresh" class="size-3.5" />
+                <span>{{ isRefreshing ? "Refreshing" : "Refresh feed" }}</span>
+              </button>
+              <a
+                href="/api/news/tech"
+                target="_blank"
+                rel="noreferrer noopener"
+                class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/80 px-3 py-2 font-medium text-slate-100 transition hover:border-amber-300/30 hover:text-white"
+              >
+                <Icon name="mdi:api" class="size-3.5" />
+                Open JSON feed
+              </a>
+            </div>
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-3">
+            <div
+              v-for="stat in countStats"
+              :key="stat.label"
+              class="rounded-3xl border border-white/8 bg-white/4 p-4"
+            >
+              <p class="text-[10px] font-medium uppercase tracking-[0.26em] text-slate-400">
+                {{ stat.label }}
+              </p>
+              <p class="mt-2 text-2xl font-semibold tracking-tight text-white">
+                {{ stat.value }}
+              </p>
+              <p class="mt-1 text-[12px] leading-5 text-slate-400/85">{{ stat.note }}</p>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div class="absolute inset-x-0 bottom-0 z-20 px-4 pb-4 sm:px-5 sm:pb-5">
-        <div
-          class="grid gap-2.5 rounded-3xl border border-white/10 bg-slate-950/60 p-3.5 backdrop-blur-md sm:grid-cols-3"
-        >
-          <div class="rounded-2xl border border-white/8 bg-white/5 p-3.5">
-            <p class="text-[11px] uppercase tracking-[0.26em] text-slate-400">Loaded</p>
-            <p class="mt-2 text-xl font-semibold text-white">{{ loadedItems.length }}</p>
-            <p class="mt-1 text-[13px] text-slate-300/70">stories rendered locally</p>
-          </div>
-
-          <div class="rounded-2xl border border-white/8 bg-white/5 p-3.5">
-            <p class="text-[11px] uppercase tracking-[0.26em] text-slate-400">Mapped</p>
-            <p class="mt-2 text-xl font-semibold text-white">{{ mappedCountryCount }}</p>
-            <p class="mt-1 text-[13px] text-slate-300/70">countries currently lighting the globe</p>
-          </div>
-
-          <div class="rounded-2xl border border-white/8 bg-white/5 p-3.5">
-            <p class="text-[11px] uppercase tracking-[0.26em] text-slate-400">Unmapped</p>
-            <p class="mt-2 text-xl font-semibold text-white">{{ unmappedItemCount }}</p>
-            <p class="mt-1 text-[13px] text-slate-300/70">
-              stories without a reliable country signal
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <aside
-      class="order-1 flex min-h-96 min-w-0 flex-col overflow-hidden rounded-4xl border border-white/10 bg-slate-950/80 shadow-[0_20px_60px_rgba(2,6,23,0.3)] backdrop-blur-md xl:order-2 xl:min-h-0 xl:h-full"
-    >
-      <div class="border-b border-white/10 px-3.5 py-3.5 sm:px-4">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="text-[11px] font-medium uppercase tracking-[0.3em] text-amber-200/70">
-              {{ visibleItemsTitle }}
-            </p>
-            <h2 class="mt-1.5 text-lg font-semibold text-white">
-              {{ totalItems }} total stories in the feed
-            </h2>
-            <p class="mt-1 text-[13px] text-slate-300/70">{{ visibleItemsHint }}</p>
-          </div>
-
-          <div
-            class="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-200/80 whitespace-nowrap"
-          >
-            Page {{ currentPage || 1 }} / {{ totalPages || 1 }}
-          </div>
-        </div>
-      </div>
-
-      <div v-if="error && !loadedItems.length" class="p-3.5 sm:p-4">
-        <div
-          class="rounded-3xl border border-rose-300/25 bg-rose-300/10 p-4 text-[13px] text-rose-50"
-        >
-          <p class="font-medium">The news feed failed to load.</p>
-          <p class="mt-2 text-rose-100/80">
-            Try the refresh action and re-run the initial request.
+      <div v-if="error && !loadedItems.length" class="news-surface rounded-4xl p-5 sm:p-6">
+        <div class="rounded-3xl border border-rose-400/25 bg-rose-400/10 p-4 text-rose-100">
+          <p class="text-sm font-medium">The news feed failed to load.</p>
+          <p class="mt-2 text-[13px] text-rose-100/80">
+            Try refreshing and request the feed again.
           </p>
         </div>
       </div>
 
-      <div v-else-if="pending && !loadedItems.length" class="grid gap-3 p-3.5 sm:p-4">
-        <div
-          v-for="index in 4"
-          :key="index"
-          class="h-32 animate-pulse rounded-[1.35rem] border border-white/8 bg-white/4"
-        />
+      <div
+        v-else-if="pending && !loadedItems.length"
+        class="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)]"
+      >
+        <div class="news-surface h-88 animate-pulse rounded-4xl" />
+        <div class="grid gap-3">
+          <div
+            v-for="index in 4"
+            :key="index"
+            class="news-surface h-32 animate-pulse rounded-3xl"
+          />
+        </div>
       </div>
 
-      <div v-else ref="feedRef" class="min-h-0 flex-1 overflow-y-auto px-3.5 py-3.5 sm:px-4">
-        <div class="space-y-2.5">
-          <article
-            v-for="item in visibleItems"
-            :key="item.link"
-            class="group cursor-pointer rounded-[1.35rem] border border-white/8 bg-white/3 p-3.5 transition hover:border-cyan-300/30 hover:bg-cyan-300/5"
-            :class="isItemFromToday(item) ? 'border-emerald-300/30!' : ''"
-            tabindex="0"
-            role="button"
-            @mouseenter="previewItem(item)"
-            @click="openFeedItem(item)"
-            @keydown.enter.prevent="openFeedItem(item)"
-            @keydown.space.prevent="openFeedItem(item)"
+      <template v-else>
+        <article
+          v-if="featuredStory"
+          class="news-surface relative overflow-hidden rounded-4xl p-5 sm:p-6"
+          :class="getItemShellClass(featuredStory)"
+        >
+          <div
+            class="absolute inset-y-0 right-0 hidden w-1/3 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.12),transparent_64%)] lg:block"
+          />
+
+          <div
+            class="relative z-10 grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(15rem,0.65fr)] lg:items-start"
           >
-            <div class="space-y-2.5">
-              <div
-                class="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-slate-400"
-              >
+            <div class="space-y-5">
+              <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-300/76">
                 <span
-                  class="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-1 text-[11px] tracking-[0.18em] text-slate-300/75"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5 font-medium text-cyan-100"
+                >
+                  <Icon name="mdi:star-four-points-outline" class="size-3.5" />
+                  Lead update
+                </span>
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5"
                 >
                   <Icon name="mdi:newspaper-variant-outline" class="size-3.5" />
-                  {{ formatSource(item.sourceHost) }}
+                  {{ formatSource(featuredStory.sourceHost) }}
                 </span>
                 <span
-                  class="inline-flex items-center gap-1 rounded-full px-2 py-1 tracking-normal normal-case"
-                  :class="
-                    isItemSeen(item)
-                      ? 'bg-slate-200/10 text-slate-200/85'
-                      : 'bg-cyan-300/12 text-cyan-50'
-                  "
+                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5"
                 >
-                  <Icon
-                    :name="isItemSeen(item) ? 'mdi:eye-outline' : 'mdi:eye-off-outline'"
-                    class="size-3.5"
-                  />
-                  {{ isItemSeen(item) ? "Seen" : "Unseen" }}
+                  <Icon name="mdi:clock-outline" class="size-3.5" />
+                  {{ formatRelativeDate(featuredStory.pubDate) }}
                 </span>
                 <span
-                  v-if="isItemFromToday(item)"
-                  class="inline-flex items-center gap-1 rounded-full bg-emerald-300/14 px-2 py-1 tracking-normal text-emerald-50 normal-case"
+                  class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5"
+                  :class="getReadStateClass(featuredStory)"
+                >
+                  <Icon :name="getReadStateIcon(featuredStory)" class="size-3.5" />
+                  {{ getReadStateLabel(featuredStory) }}
+                </span>
+                <span
+                  v-if="isItemFromToday(featuredStory)"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-1.5 text-emerald-100"
                 >
                   <Icon name="mdi:calendar-today" class="size-3.5" />
-                  Today
+                  Fresh today
                 </span>
-                <span>{{ formatRelativeDate(item.pubDate) }}</span>
               </div>
 
-              <a
-                :href="item.link"
-                target="_blank"
-                rel="noreferrer noopener"
-                class="block text-[15px] font-medium leading-5.5 text-white transition group-hover:text-cyan-100"
-                @click.stop="handleOpenOriginalItem(item)"
-              >
-                {{ item.title }}
-              </a>
+              <div class="space-y-3">
+                <h2
+                  class="news-serif text-xl leading-tight font-semibold tracking-[-0.03em] text-white sm:text-2xl"
+                >
+                  {{ featuredStory.title }}
+                </h2>
+                <HtmlContent v-if="leadSummary" :html="leadSummary" variant="lead" />
+              </div>
 
-              <HtmlContent :html="getPreviewHtml(item)" variant="preview" />
+              <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5"
+                >
+                  <Icon name="mdi:star-outline" class="size-3.5" />
+                  Signal {{ featuredStory.score }}
+                </span>
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5"
+                >
+                  <Icon name="mdi:calendar-range" class="size-3.5" />
+                  {{ formatAbsoluteDate(featuredStory.pubDate) }}
+                </span>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-full bg-cyan-300/90 px-4 py-2 text-[12px] font-semibold text-slate-950 transition hover:bg-cyan-200"
+                  @click="openFeedItem(featuredStory)"
+                >
+                  <Icon name="mdi:text-box-search-outline" class="size-3.5" />
+                  Read details
+                </button>
+                <a
+                  :href="featuredStory.link"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[12px] font-medium text-slate-100 transition hover:border-white/20 hover:bg-white/8"
+                  @click="handleOpenOriginalItem(featuredStory)"
+                >
+                  <Icon name="mdi:open-in-new" class="size-3.5" />
+                  Open original article
+                </a>
+              </div>
+            </div>
+
+            <div class="grid gap-3">
+              <div
+                v-for="item in sideStories"
+                :key="item.link"
+                class="rounded-3xl p-4 transition hover:border-cyan-300/20 hover:bg-cyan-300/6"
+                :class="getItemShellClass(item)"
+              >
+                <div
+                  class="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.22em] text-slate-500"
+                >
+                  <span>{{ formatSource(item.sourceHost) }}</span>
+                  <span class="tracking-normal normal-case">{{
+                    formatRelativeDate(item.pubDate)
+                  }}</span>
+                </div>
+                <div class="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                  <span
+                    class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
+                    :class="getReadStateClass(item)"
+                  >
+                    <Icon :name="getReadStateIcon(item)" class="size-3.5" />
+                    {{ getReadStateLabel(item) }}
+                  </span>
+                  <span
+                    v-if="isItemFromToday(item)"
+                    class="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-emerald-100"
+                  >
+                    <Icon name="mdi:calendar-today" class="size-3.5" />
+                    Fresh today
+                  </span>
+                </div>
+                <button type="button" class="mt-3 text-left" @click="openFeedItem(item)">
+                  <span
+                    class="news-serif text-lg leading-6 font-semibold transition hover:text-cyan-100"
+                    :class="getItemTitleClass(item)"
+                  >
+                    {{ item.title }}
+                  </span>
+                </button>
+                <p class="mt-2 text-[12px] leading-5 text-slate-400/84">
+                  {{ summarize(item.description, 120) }}
+                </p>
+                <div class="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                  <span>{{ item.score }} pts</span>
+                  <span class="h-1 w-1 rounded-full bg-slate-700" />
+                  <span>{{ formatAbsoluteDate(item.pubDate) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <section class="news-surface rounded-4xl p-5 sm:p-6">
+          <div class="flex flex-wrap items-end justify-between gap-4 border-b border-white/8 pb-4">
+            <div class="space-y-2">
+              <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+                Main feed
+              </p>
+              <div>
+                <h3 class="news-serif text-[1.7rem] font-semibold tracking-[-0.03em] text-white">
+                  Latest ranked updates
+                </h3>
+                <p class="mt-1 max-w-2xl text-[12px] leading-5 text-slate-400/84">
+                  {{ feedSummary }}
+                </p>
+                <p class="mt-2 text-[11px] leading-5 text-slate-500">
+                  Green cards were published today. Amber status means unread. Slate status means
+                  already opened.
+                </p>
+              </div>
             </div>
 
             <div
-              class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/8 pt-2.5 text-[11px] text-slate-400"
+              class="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-[11px] text-slate-300/84"
             >
-              <div class="flex min-w-0 flex-wrap items-center gap-2">
-                <span>{{ formatAbsoluteDate(item.pubDate) }}</span>
-                <span class="h-1 w-1 rounded-full bg-slate-600" />
-                <span>{{ item.countryDetails.method }}</span>
-                <span class="h-1 w-1 rounded-full bg-slate-600" />
-                <span>{{ item.countryDetails.confidence }} confidence</span>
-              </div>
+              Page {{ currentPage || 1 }} / {{ totalPages || 1 }}
+            </div>
+          </div>
 
-              <div class="ml-auto flex shrink-0 flex-wrap items-center gap-1.5">
-                <span class="rounded-full bg-amber-300/10 px-2 py-0.5 text-[11px] text-amber-100">
-                  {{ item.score }} pts
-                </span>
-                <button
-                  v-if="item.country"
-                  type="button"
-                  class="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] text-slate-200 transition hover:border-cyan-300/30 hover:text-cyan-100"
-                  @click.stop="openItemCountry(item)"
-                >
-                  {{ item.country }}
+          <div v-if="!feedItems.length" class="pt-5">
+            <div
+              class="rounded-3xl border border-dashed border-white/10 bg-slate-950/55 px-4 py-8 text-center text-[12px] text-slate-400"
+            >
+              More stories will appear here as the next page loads.
+            </div>
+          </div>
+
+          <div v-else class="divide-y divide-white/8 pt-2 space-y-2">
+            <article
+              v-for="item in feedItems"
+              :key="item.link"
+              class="group grid gap-4 rounded-3xl px-4 py-5 transition lg:grid-cols-[minmax(0,1fr)_12rem] lg:gap-5"
+              :class="getItemShellClass(item)"
+            >
+              <div class="space-y-3">
+                <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                  <span
+                    class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1"
+                  >
+                    <Icon name="mdi:newspaper-variant-outline" class="size-3.5" />
+                    {{ formatSource(item.sourceHost) }}
+                  </span>
+                  <span
+                    class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1"
+                  >
+                    <Icon name="mdi:clock-outline" class="size-3.5" />
+                    {{ formatRelativeDate(item.pubDate) }}
+                  </span>
+                  <span
+                    v-if="isItemFromToday(item)"
+                    class="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-emerald-100"
+                  >
+                    <Icon name="mdi:calendar-today" class="size-3.5" />
+                    Fresh today
+                  </span>
+                  <span
+                    class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
+                    :class="getReadStateClass(item)"
+                  >
+                    <Icon :name="getReadStateIcon(item)" class="size-3.5" />
+                    {{ getReadStateLabel(item) }}
+                  </span>
+                </div>
+
+                <button type="button" class="block text-left" @click="openFeedItem(item)">
+                  <span
+                    class="news-serif text-[1.35rem] leading-7 font-semibold tracking-[-0.02em] transition group-hover:text-cyan-100"
+                    :class="getItemTitleClass(item)"
+                  >
+                    {{ item.title }}
+                  </span>
                 </button>
+
+                <HtmlContent :html="getPreviewHtml(item)" variant="preview" />
+
+                <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
+                  <span>{{ formatAbsoluteDate(item.pubDate) }}</span>
+                  <span class="h-1 w-1 rounded-full bg-slate-700" />
+                  <span>{{ item.score }} points</span>
+                </div>
+
+                <div class="flex flex-wrap gap-2 text-xs">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 font-medium text-slate-100 transition hover:border-cyan-300/25 hover:text-cyan-100"
+                    @click="openFeedItem(item)"
+                  >
+                    <Icon name="mdi:text-box-search-outline" class="size-3.5" />
+                    Quick view
+                  </button>
+                  <a
+                    :href="item.link"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 font-medium text-slate-100 transition hover:border-cyan-300/25 hover:text-cyan-100"
+                    @click="handleOpenOriginalItem(item)"
+                  >
+                    <Icon name="mdi:open-in-new" class="size-3.5" />
+                    Open
+                  </a>
+                </div>
               </div>
+            </article>
+
+            <div v-if="isLoadingMore" class="py-5 text-center text-[12px] text-slate-500">
+              Loading another page of stories...
             </div>
 
-            <div class="mt-2 flex items-center justify-between gap-3 text-[11px] text-slate-400">
-              <span>Open full dispatch</span>
-              <span class="inline-flex items-center gap-1 text-cyan-100/80">
-                <Icon name="mdi:arrow-top-right" class="size-3.5" />
-                Details
-              </span>
+            <div v-else-if="hasMore" class="py-5 text-center text-[12px] text-slate-500">
+              <p>Scroll down to continue loading the feed.</p>
+              <button
+                type="button"
+                class="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-medium text-slate-100 transition hover:border-cyan-300/25 hover:text-cyan-100"
+                @click="loadMore"
+              >
+                <Icon name="mdi:arrow-down-circle-outline" class="size-3.5" />
+                Load next page
+              </button>
             </div>
-          </article>
 
-          <div
-            v-if="!visibleItems.length"
-            class="rounded-[1.35rem] border border-dashed border-white/10 px-4 py-8 text-center text-[13px] text-slate-300/70"
-          >
-            No stories match the current map selection yet.
+            <div v-if="hasMore" ref="feedBottomRef" class="h-px w-full" aria-hidden="true" />
           </div>
+        </section>
+      </template>
+    </div>
 
-          <div
-            v-if="isLoadingMore"
-            class="rounded-[1.35rem] border border-white/8 bg-white/3 px-4 py-4 text-center text-[13px] text-slate-300/75"
-          >
-            Loading another page of stories...
+    <aside class="space-y-2 xl:sticky xl:top-4">
+      <section class="news-surface rounded-4xl p-5">
+        <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+          Feed notes
+        </p>
+        <h3 class="news-serif mt-2 text-lg font-semibold tracking-[-0.03em] text-white">
+          Built for checking updates fast
+        </h3>
+        <p class="mt-2 text-[12px] leading-5 text-slate-400/84">
+          The feed keeps the strongest story on top, pushes supporting items beside it, and leaves
+          the rest in a clean chronological scanline ranked by signal.
+        </p>
+
+        <div class="mt-4 grid gap-3">
+          <div class="rounded-3xl border border-white/8 bg-white/4 p-4">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+              Loaded
+            </p>
+            <p class="mt-2 text-2xl font-semibold tracking-tight text-white">
+              {{ loadedItems.length }}
+            </p>
+            <p class="mt-1 text-[12px] leading-5 text-slate-400/84">stories currently rendered</p>
           </div>
-
-          <div
-            v-else-if="hasMore"
-            class="rounded-[1.35rem] border border-dashed border-white/10 px-4 py-4 text-center text-[13px] text-slate-400"
-          >
-            <p>Scroll to continue loading more stories.</p>
-            <button
-              type="button"
-              class="mt-3 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] text-slate-200 transition hover:border-cyan-300/35 hover:bg-cyan-300/10 hover:text-cyan-100"
-              @click="loadMore"
-            >
-              <Icon name="mdi:arrow-down-circle-outline" class="size-3.5" />
-              Load next page
-            </button>
+          <div class="rounded-3xl border border-white/8 bg-white/4 p-4">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+              Pipeline
+            </p>
+            <p class="mt-2 text-[12px] leading-5 text-slate-300/80">
+              The endpoint merges all configured feeds, removes duplicates, scores the results, and
+              paginates them for continuous reading.
+            </p>
           </div>
-
-          <div v-if="hasMore" ref="feedBottomRef" class="h-px w-full" aria-hidden="true" />
         </div>
-      </div>
+      </section>
+
+      <section class="news-surface rounded-4xl p-5">
+        <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+          Sources now
+        </p>
+        <h3 class="news-serif mt-2 text-lg font-semibold tracking-[-0.03em] text-white">
+          Most active publishers
+        </h3>
+
+        <div class="mt-4 space-y-3">
+          <div
+            v-for="source in topSources"
+            :key="source.label"
+            class="flex items-center justify-between gap-3 rounded-3xl border border-white/8 bg-white/4 px-4 py-1.5"
+          >
+            <span class="text-[12px] font-medium text-slate-100">{{ source.label }}</span>
+            <span class="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] text-slate-400">
+              {{ source.count }}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section class="news-surface rounded-4xl p-5">
+        <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+          Tracked set
+        </p>
+        <h3 class="news-serif mt-2 text-lg font-semibold tracking-[-0.03em] text-white">
+          Monitored sources
+        </h3>
+
+        <div class="mt-4 flex flex-wrap gap-2">
+          <span
+            v-for="source in MONITORED_SOURCES"
+            :key="source"
+            class="inline-flex items-center rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-[11px] text-slate-300/84"
+          >
+            {{ source }}
+          </span>
+        </div>
+      </section>
     </aside>
   </section>
 
@@ -982,151 +971,132 @@ watch(
       @click.self="closeFeedItem"
     >
       <div
-        class="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-4xl border border-white/10 bg-[linear-gradient(180deg,rgba(7,14,24,0.98),rgba(6,11,19,0.96))] shadow-[0_30px_90px_rgba(2,6,23,0.6)]"
+        class="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-4xl border border-white/10 bg-[linear-gradient(180deg,rgba(7,12,22,0.98),rgba(3,8,18,0.96))] shadow-[0_28px_90px_rgba(2,6,23,0.48)]"
       >
         <div
-          class="flex items-start justify-between gap-4 border-b border-white/10 px-4 py-4 sm:px-5"
+          class="flex items-start justify-between gap-4 border-b border-white/8 px-5 py-5 sm:px-6"
         >
           <div class="space-y-2">
-            <p class="text-[11px] font-medium uppercase tracking-[0.3em] text-cyan-200/70">
-              Feed details
+            <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+              Story details
             </p>
-            <h3 class="text-lg font-semibold leading-tight text-white sm:text-xl">
+            <h3
+              class="news-serif text-[1.8rem] leading-tight font-semibold tracking-[-0.03em] text-white sm:text-[2.1rem]"
+            >
               {{ activeFeedItem.title }}
             </h3>
           </div>
 
           <button
             type="button"
-            class="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200 transition hover:border-cyan-300/35 hover:text-cyan-100"
+            class="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200 transition hover:border-cyan-300/25 hover:text-cyan-100"
             @click="closeFeedItem"
           >
             <Icon name="mdi:close" class="size-4" />
           </button>
         </div>
 
-        <div class="overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
-          <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-300/80">
+        <div class="overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
+          <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
             <span
-              class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1"
+              class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5"
             >
-              <Icon name="mdi:radio-tower" class="size-3.5" />
+              <Icon name="mdi:newspaper-variant-outline" class="size-3.5" />
               {{ formatSource(activeFeedItem.sourceHost) }}
             </span>
             <span
-              class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1"
+              class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5"
             >
-              <Icon name="mdi:earth" class="size-3.5" />
-              {{ getCountryLabel(activeFeedItem) }}
-            </span>
-            <span
-              class="inline-flex items-center gap-1 rounded-full border px-2.5 py-1"
-              :class="
-                isItemSeen(activeFeedItem)
-                  ? 'border-slate-200/10 bg-slate-200/10 text-slate-200/85'
-                  : 'border-cyan-300/20 bg-cyan-300/10 text-cyan-50'
-              "
-            >
-              <Icon
-                :name="isItemSeen(activeFeedItem) ? 'mdi:eye-outline' : 'mdi:eye-off-outline'"
-                class="size-3.5"
-              />
-              {{ isItemSeen(activeFeedItem) ? "Seen" : "Unseen" }}
-            </span>
-            <span
-              v-if="isItemFromToday(activeFeedItem)"
-              class="inline-flex items-center gap-1 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2.5 py-1 text-emerald-50"
-            >
-              <Icon name="mdi:calendar-today" class="size-3.5" />
-              Today
-            </span>
-            <span
-              class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1"
-            >
-              <Icon name="mdi:star-four-points-outline" class="size-3.5" />
-              Signal {{ activeFeedItem.score }}
-            </span>
-            <span
-              class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1"
-            >
-              <Icon name="mdi:clock-outline" class="size-3.5" />
+              <Icon name="mdi:calendar-range" class="size-3.5" />
               {{ formatAbsoluteDate(activeFeedItem.pubDate) }}
             </span>
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5"
+            >
+              <Icon name="mdi:star-outline" class="size-3.5" />
+              Signal {{ activeFeedItem.score }}
+            </span>
           </div>
 
-          <div class="mt-4 grid gap-3 sm:grid-cols-3">
-            <div class="rounded-2xl border border-white/8 bg-white/4 p-3">
-              <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Method</p>
+          <div class="mt-5 grid gap-3 sm:grid-cols-3">
+            <div class="rounded-3xl border border-white/8 bg-white/4 p-4">
+              <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                Source
+              </p>
               <p class="mt-2 text-[13px] font-medium text-white">
-                {{ activeFeedItem.countryDetails.method }}
+                {{ formatSource(activeFeedItem.sourceHost) }}
               </p>
             </div>
-            <div class="rounded-2xl border border-white/8 bg-white/4 p-3">
-              <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Confidence</p>
-              <p class="mt-2 text-[13px] font-medium text-white">
-                {{ activeFeedItem.countryDetails.confidence }}
-              </p>
-            </div>
-            <div class="rounded-2xl border border-white/8 bg-white/4 p-3">
-              <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Publisher</p>
+            <div
+              class="rounded-3xl border p-4"
+              :class="
+                isItemFromToday(activeFeedItem)
+                  ? 'border-emerald-300/18 bg-emerald-300/8 text-emerald-100/88'
+                  : 'border-white/8 bg-white/4 text-slate-400'
+              "
+            >
               <p
-                class="mt-2 text-[13px] font-medium text-white text-ellipsis overflow-hidden whitespace-nowrap"
-                :title="activeFeedItem.source"
+                class="text-[10px] font-semibold uppercase tracking-[0.22em]"
+                :class="isItemFromToday(activeFeedItem) ? 'text-emerald-200/75' : 'text-slate-500'"
               >
-                {{ activeFeedItem.source }}
+                {{ isItemFromToday(activeFeedItem) ? "Published today" : "Published" }}
+              </p>
+              <p
+                class="mt-2 text-[13px] font-medium"
+                :class="isItemFromToday(activeFeedItem) ? 'text-emerald-50' : 'text-white'"
+              >
+                {{ formatRelativeDate(activeFeedItem.pubDate) }}
+              </p>
+            </div>
+            <div class="rounded-3xl border p-4" :class="getReadStateClass(activeFeedItem)">
+              <p class="text-[10px] font-semibold uppercase tracking-[0.22em]">Read state</p>
+              <p class="mt-2 inline-flex items-center gap-1.5 text-[13px] font-medium">
+                <Icon :name="getReadStateIcon(activeFeedItem)" class="size-3.5" />
+                {{ getReadStateLabel(activeFeedItem) }}
+              </p>
+            </div>
+            <div
+              class="rounded-3xl border border-white/8 bg-white/4 p-4 sm:col-span-3 lg:col-span-1"
+            >
+              <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                Feed signal
+              </p>
+              <p class="mt-2 text-[13px] font-medium text-white">
+                {{ activeFeedItem.score }} points
               </p>
             </div>
           </div>
 
-          <div class="mt-4 rounded-3xl border border-white/8 bg-white/3 p-4">
-            <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Dispatch</p>
+          <div class="mt-5 rounded-4xl border border-white/8 bg-white/4 p-5">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+              Summary
+            </p>
             <HtmlContent
               v-if="activeFeedItemDescriptionHtml"
               :html="activeFeedItemDescriptionHtml"
               variant="detail"
             />
-            <p v-else class="mt-3 text-[14px] leading-6 text-slate-200/85">
+            <p v-else class="mt-4 text-[13px] leading-6 text-slate-300/84">
               No additional description is available for this item.
-            </p>
-          </div>
-
-          <div class="mt-4 rounded-3xl border border-white/8 bg-white/3 p-4">
-            <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Country hint</p>
-            <p class="mt-3 text-[13px] leading-5 text-slate-300/80">
-              {{
-                activeFeedItem.countryDetails.hint ||
-                "No country hint was supplied for this dispatch."
-              }}
             </p>
           </div>
         </div>
 
         <div
-          class="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-4 py-4 sm:px-5"
+          class="flex flex-wrap items-center justify-between gap-3 border-t border-white/8 px-5 py-4 sm:px-6"
         >
-          <p class="text-[11px] text-slate-400">Press Escape or click outside to close.</p>
+          <p class="text-[11px] text-slate-500">Press Escape or click outside to close.</p>
 
-          <div class="flex flex-wrap items-center gap-2">
-            <button
-              v-if="activeFeedItem.country"
-              type="button"
-              class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] text-slate-200 transition hover:border-cyan-300/35 hover:text-cyan-100"
-              @click="openItemCountry(activeFeedItem)"
-            >
-              <Icon name="mdi:crosshairs-gps" class="size-3.5" />
-              Spotlight {{ activeFeedItem.country }}
-            </button>
-            <a
-              :href="activeFeedItem.link"
-              target="_blank"
-              rel="noreferrer noopener"
-              class="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5 text-[11px] font-medium text-cyan-50 transition hover:border-cyan-300/45 hover:bg-cyan-300/15"
-              @click="handleOpenOriginalItem(activeFeedItem)"
-            >
-              <Icon name="mdi:open-in-new" class="size-3.5" />
-              Open original article
-            </a>
-          </div>
+          <a
+            :href="activeFeedItem.link"
+            target="_blank"
+            rel="noreferrer noopener"
+            class="inline-flex items-center gap-2 rounded-full bg-cyan-300/90 px-4 py-2 text-[12px] font-semibold text-slate-950 transition hover:bg-cyan-200"
+            @click="handleOpenOriginalItem(activeFeedItem)"
+          >
+            <Icon name="mdi:open-in-new" class="size-3.5" />
+            Open original article
+          </a>
         </div>
       </div>
     </div>
