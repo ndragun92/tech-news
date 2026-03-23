@@ -310,14 +310,6 @@ const getItemShellClass = (item: TechNewsItem) => {
     : "news-item-shell news-item-shell--unread";
 };
 
-const getItemPanelClass = (item: TechNewsItem) => {
-  if (isItemFromToday(item)) {
-    return "news-item-panel--today";
-  }
-
-  return isItemSeen(item) ? "news-item-panel--seen" : "news-item-panel--unread";
-};
-
 const getItemTitleClass = (item: TechNewsItem) => {
   return isItemSeen(item) ? "text-slate-200" : "text-white";
 };
@@ -446,6 +438,18 @@ const feedSummary = computed(() => {
   return `${totalItems.value} ranked stories across ${sourceCount.value} active sources. ${unseenCount.value} are still unread.`;
 });
 
+const loadedProgress = computed(() => {
+  if (!totalItems.value) {
+    return 0;
+  }
+
+  return Math.min(100, Math.round((loadedItems.value.length / totalItems.value) * 100));
+});
+
+const remainingItems = computed(() => {
+  return Math.max(totalItems.value - loadedItems.value.length, 0);
+});
+
 const activeFeedItemDescriptionHtml = computed(() => {
   if (!activeFeedItem.value) {
     return "";
@@ -517,7 +521,9 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
 </script>
 
 <template>
-  <section class="grid gap-4 xl:grid-cols-[minmax(0,1.62fr)_20rem] xl:items-start">
+  <section
+    class="grid gap-4 xl:min-h-[calc(100dvh-11.5rem)] xl:grid-cols-[minmax(0,1.62fr)_20rem] xl:items-start"
+  >
     <div class="space-y-4">
       <header class="news-surface relative overflow-hidden rounded-4xl p-5 sm:p-6">
         <div
@@ -886,81 +892,117 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
       </template>
     </div>
 
-    <aside class="space-y-2 xl:sticky xl:top-4">
-      <section class="news-surface rounded-4xl p-5">
-        <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
-          Feed notes
-        </p>
-        <h3 class="news-serif mt-2 text-lg font-semibold tracking-[-0.03em] text-white">
-          Built for checking updates fast
-        </h3>
-        <p class="mt-2 text-[12px] leading-5 text-slate-400/84">
-          The feed keeps the strongest story on top, pushes supporting items beside it, and leaves
-          the rest in a clean chronological scanline ranked by signal.
-        </p>
+    <aside
+      class="xl:sticky xl:top-4 xl:max-h-[calc(100dvh-2rem)] xl:overflow-y-auto xl:pr-1 news-scrollbar"
+    >
+      <div class="space-y-2">
+        <section class="news-surface rounded-4xl p-5">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+            Feed notes
+          </p>
+          <h3 class="news-serif mt-2 text-lg font-semibold tracking-[-0.03em] text-white">
+            Built for checking updates fast
+          </h3>
+          <p class="mt-2 text-[12px] leading-5 text-slate-400/84">
+            The feed keeps the strongest story on top, pushes supporting items beside it, and leaves
+            the rest in a clean chronological scanline ranked by signal.
+          </p>
 
-        <div class="mt-4 grid gap-3">
-          <div class="rounded-3xl border border-white/8 bg-white/4 p-4">
-            <p class="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-              Loaded
-            </p>
-            <p class="mt-2 text-2xl font-semibold tracking-tight text-white">
-              {{ loadedItems.length }}
-            </p>
-            <p class="mt-1 text-[12px] leading-5 text-slate-400/84">stories currently rendered</p>
+          <div class="mt-4 grid gap-3">
+            <div class="rounded-3xl border border-white/8 bg-white/4 p-4">
+              <p class="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                Loaded
+              </p>
+              <p class="mt-2 text-2xl font-semibold tracking-tight text-white">
+                {{ loadedItems.length }}
+              </p>
+              <p class="mt-1 text-[12px] leading-5 text-slate-400/84">stories currently rendered</p>
+            </div>
+            <div class="rounded-3xl border border-white/8 bg-white/4 p-4">
+              <p class="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                Pipeline
+              </p>
+              <p class="mt-2 text-[12px] leading-5 text-slate-300/80">
+                The endpoint merges all configured feeds, removes duplicates, scores the results,
+                and paginates them for continuous reading.
+              </p>
+            </div>
           </div>
-          <div class="rounded-3xl border border-white/8 bg-white/4 p-4">
-            <p class="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-              Pipeline
+        </section>
+
+        <section class="news-surface rounded-4xl p-5">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+            Loading state
+          </p>
+          <h3 class="news-serif mt-2 text-lg font-semibold tracking-[-0.03em] text-white">
+            Feed progress
+          </h3>
+
+          <div class="mt-4 rounded-3xl border border-white/8 bg-white/4 p-4">
+            <div class="flex items-center justify-between gap-3 text-[11px] text-slate-400/90">
+              <span>Loaded coverage</span>
+              <span class="font-semibold text-white">{{ loadedProgress }}%</span>
+            </div>
+            <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-900/70">
+              <div
+                class="h-full rounded-full bg-[linear-gradient(90deg,rgba(34,211,238,0.92),rgba(251,191,36,0.9))] transition-[width] duration-500"
+                :style="{ width: `${loadedProgress}%` }"
+              />
+            </div>
+            <p class="mt-3 text-[12px] leading-5 text-slate-300/84">
+              {{ loadedItems.length }} of {{ totalItems || loadedItems.length }} stories loaded.
             </p>
-            <p class="mt-2 text-[12px] leading-5 text-slate-300/80">
-              The endpoint merges all configured feeds, removes duplicates, scores the results, and
-              paginates them for continuous reading.
+            <p class="mt-1 text-[11px] leading-5 text-slate-500">
+              {{
+                remainingItems
+                  ? `${remainingItems} stories remain in later pages.`
+                  : "All available stories are loaded."
+              }}
             </p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="news-surface rounded-4xl p-5">
-        <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
-          Sources now
-        </p>
-        <h3 class="news-serif mt-2 text-lg font-semibold tracking-[-0.03em] text-white">
-          Most active publishers
-        </h3>
+        <section class="news-surface rounded-4xl p-5">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+            Sources now
+          </p>
+          <h3 class="news-serif mt-2 text-lg font-semibold tracking-[-0.03em] text-white">
+            Most active publishers
+          </h3>
 
-        <div class="mt-4 space-y-3">
-          <div
-            v-for="source in topSources"
-            :key="source.label"
-            class="flex items-center justify-between gap-3 rounded-3xl border border-white/8 bg-white/4 px-4 py-1.5"
-          >
-            <span class="text-[12px] font-medium text-slate-100">{{ source.label }}</span>
-            <span class="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] text-slate-400">
-              {{ source.count }}
+          <div class="mt-4 space-y-3">
+            <div
+              v-for="source in topSources"
+              :key="source.label"
+              class="flex items-center justify-between gap-3 rounded-3xl border border-white/8 bg-white/4 px-4 py-1.5"
+            >
+              <span class="text-[12px] font-medium text-slate-100">{{ source.label }}</span>
+              <span class="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] text-slate-400">
+                {{ source.count }}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section class="news-surface rounded-4xl p-5">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+            Tracked set
+          </p>
+          <h3 class="news-serif mt-2 text-lg font-semibold tracking-[-0.03em] text-white">
+            Monitored sources
+          </h3>
+
+          <div class="mt-4 flex flex-wrap gap-2">
+            <span
+              v-for="source in MONITORED_SOURCES"
+              :key="source"
+              class="inline-flex items-center rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-[11px] text-slate-300/84"
+            >
+              {{ source }}
             </span>
           </div>
-        </div>
-      </section>
-
-      <section class="news-surface rounded-4xl p-5">
-        <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
-          Tracked set
-        </p>
-        <h3 class="news-serif mt-2 text-lg font-semibold tracking-[-0.03em] text-white">
-          Monitored sources
-        </h3>
-
-        <div class="mt-4 flex flex-wrap gap-2">
-          <span
-            v-for="source in MONITORED_SOURCES"
-            :key="source"
-            class="inline-flex items-center rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-[11px] text-slate-300/84"
-          >
-            {{ source }}
-          </span>
-        </div>
-      </section>
+        </section>
+      </div>
     </aside>
   </section>
 
