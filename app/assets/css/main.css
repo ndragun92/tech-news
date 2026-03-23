@@ -40,3 +40,44 @@ a {
   background: rgba(34, 211, 238, 0.3);
   color: white;
 }
+
+.floating-credit {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.82), rgba(8, 15, 30, 0.72)),
+    radial-gradient(circle at top left, rgba(251, 191, 36, 0.18), transparent 36%),
+    radial-gradient(circle at bottom right, rgba(34, 211, 238, 0.16), transparent 42%);
+  box-shadow:
+    0 16px 40px rgba(2, 6, 23, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px);
+}
+
+.floating-credit::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05),
+    transparent 45%,
+    rgba(255, 255, 255, 0.08)
+  );
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.floating-credit__name {
+  position: relative;
+  z-index: 1;
+  color: #f8fafc;
+  text-decoration: none;
+  text-shadow: 0 0 18px rgba(34, 211, 238, 0.25);
+}
+
+.floating-credit__name:hover {
+  color: #67e8f9;
+}
