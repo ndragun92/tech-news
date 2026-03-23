@@ -1,11 +1,3 @@
-<script setup lang="ts">
-const todayLabel = new Intl.DateTimeFormat("en", {
-  weekday: "long",
-  month: "long",
-  day: "numeric",
-}).format(new Date());
-</script>
-
 <template>
   <main class="min-h-dvh px-3 py-3 sm:px-5 lg:px-6">
     <div
@@ -78,3 +70,11 @@ const todayLabel = new Intl.DateTimeFormat("en", {
     </div>
   </main>
 </template>
+
+<script setup lang="ts">
+const todayLabel = new Intl.DateTimeFormat("en", {
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+}).format(new Date());
+</script>
