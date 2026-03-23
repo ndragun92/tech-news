@@ -243,13 +243,13 @@ const formatSource = (value: string) => {
 };
 
 const descriptionContentClass =
-  "mt-3 space-y-4 text-[13px] leading-6 text-slate-300/88 [&_a]:font-medium [&_a]:text-cyan-200 [&_a]:underline [&_a]:decoration-cyan-300/40 [&_a]:underline-offset-3 [&_blockquote]:border-l-2 [&_blockquote]:border-cyan-400/30 [&_blockquote]:bg-slate-900/70 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:italic [&_blockquote]:text-slate-200 [&_code]:rounded-md [&_code]:transparent [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[12px] [&_em]:text-white [&_li]:marker:text-cyan-300/70 [&_ol]:my-4 [&_ol]:space-y-2 [&_ol]:pl-5 [&_p]:my-0 [&_pre]:overflow-x-auto [&_pre]:rounded-3xl [&_pre]:border [&_pre]:border-white/8 [&_pre]:bg-slate-950 [&_pre]:p-4 [&_pre]:text-[12px] [&_pre]:text-slate-100 [&_strong]:font-semibold [&_strong]:text-white [&_ul]:my-4 [&_ul]:space-y-2 [&_ul]:pl-5";
+  "mt-3 space-y-4 text-sm leading-6 text-slate-300/88 [&_a]:font-medium [&_a]:text-cyan-200 [&_a]:underline [&_a]:decoration-cyan-300/40 [&_a]:underline-offset-3 [&_blockquote]:border-l-2 [&_blockquote]:border-cyan-400/30 [&_blockquote]:bg-slate-900/70 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:italic [&_blockquote]:text-slate-200 [&_code]:rounded-md [&_code]:transparent [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-xs [&_em]:text-white [&_li]:marker:text-cyan-300/70 [&_ol]:my-4 [&_ol]:space-y-2 [&_ol]:pl-5 [&_p]:my-0 [&_pre]:overflow-x-auto [&_pre]:rounded-3xl [&_pre]:border [&_pre]:border-white/8 [&_pre]:bg-slate-950 [&_pre]:p-4 [&_pre]:text-xs [&_pre]:text-slate-100 [&_strong]:font-semibold [&_strong]:text-white [&_ul]:my-4 [&_ul]:space-y-2 [&_ul]:pl-5";
 
 const leadContentClass =
-  "mt-3 overflow-hidden text-[13px] leading-6 text-slate-300/88 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:6] [&_a]:font-medium [&_a]:text-cyan-200 [&_a]:underline [&_a]:decoration-cyan-300/35 [&_a]:underline-offset-3 [&_code]:rounded-md [&_code]:bg-transparent [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[12px] [&_em]:text-white [&_strong]:font-semibold [&_strong]:text-white";
+  "mt-3 overflow-hidden text-sm leading-6 text-slate-300/88 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:6] [&_a]:font-medium [&_a]:text-cyan-200 [&_a]:underline [&_a]:decoration-cyan-300/35 [&_a]:underline-offset-3 [&_code]:rounded-md [&_code]:bg-transparent [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-xs [&_em]:text-white [&_strong]:font-semibold [&_strong]:text-white";
 
 const cardPreviewContentClass =
-  "overflow-hidden text-[12px] leading-5 text-slate-400/86 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4] [&_a]:font-medium [&_a]:text-cyan-100 [&_a]:underline [&_a]:decoration-cyan-300/25 [&_a]:underline-offset-2 [&_code]:rounded-md [&_code]:bg-transparent [&_code]:px-1 [&_code]:py-0.5 [&_em]:text-slate-200 [&_strong]:font-semibold [&_strong]:text-slate-50";
+  "overflow-hidden text-xs leading-5 text-slate-400/86 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4] [&_a]:font-medium [&_a]:text-cyan-100 [&_a]:underline [&_a]:decoration-cyan-300/25 [&_a]:underline-offset-2 [&_code]:rounded-md [&_code]:bg-transparent [&_code]:px-1 [&_code]:py-0.5 [&_em]:text-slate-200 [&_strong]:font-semibold [&_strong]:text-slate-50";
 
 const HtmlContent = defineComponent({
   name: "HtmlContent",
@@ -522,10 +522,10 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
 
 <template>
   <section
-    class="grid gap-4 xl:min-h-[calc(100dvh-11.5rem)] xl:grid-cols-[minmax(0,1.62fr)_20rem] xl:items-start"
+    class="grid gap-3 pb-20 sm:gap-4 sm:pb-24 xl:min-h-[calc(100dvh-11.5rem)] xl:grid-cols-[minmax(0,1.62fr)_20rem] xl:items-start"
   >
-    <div class="space-y-4">
-      <header class="news-surface relative overflow-hidden rounded-4xl p-5 sm:p-6">
+    <div class="space-y-3 sm:space-y-4">
+      <header class="news-surface relative overflow-hidden rounded-4xl p-4 sm:p-6">
         <div
           class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_22%),radial-gradient(circle_at_85%_18%,rgba(251,191,36,0.12),transparent_22%),linear-gradient(180deg,rgba(10,17,30,0.92),rgba(7,12,22,0.82))]"
         />
@@ -533,26 +533,28 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
         <div class="relative z-10 space-y-5">
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="max-w-3xl space-y-3">
-              <p class="text-[10px] font-semibold uppercase tracking-[0.34em] text-cyan-200/70">
+              <p class="text-xs font-semibold uppercase tracking-widest text-cyan-200/70">
                 Source tracker
               </p>
               <div class="space-y-2">
                 <h1
-                  class="news-serif max-w-3xl text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl"
+                  class="news-serif max-w-3xl text-2xl font-semibold tracking-tight text-white sm:text-3xl"
                 >
                   A focused dark feed for staying on top of the sources that matter.
                 </h1>
-                <p class="max-w-2xl text-[13px] text-slate-300/78">
+                <p class="max-w-2xl text-sm text-slate-300/78">
                   Updates are ranked, cleaned, and laid out for scanning fast. No geography, no
                   filler, just the freshest stories from the tracked tech publications.
                 </p>
               </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-300/76">
+            <div
+              class="flex w-full flex-wrap items-center gap-2 text-xs text-slate-300/76 sm:w-auto"
+            >
               <button
                 type="button"
-                class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-2 font-medium text-slate-100 transition hover:border-cyan-300/35 hover:bg-cyan-300/10"
+                class="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-2 font-medium text-slate-100 transition hover:border-cyan-300/35 hover:bg-cyan-300/10 sm:flex-none"
                 @click="refreshNews"
               >
                 <Icon name="mdi:refresh" class="size-3.5" />
@@ -562,7 +564,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                 href="/api/news/tech"
                 target="_blank"
                 rel="noreferrer noopener"
-                class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/80 px-3 py-2 font-medium text-slate-100 transition hover:border-amber-300/30 hover:text-white"
+                class="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/10 bg-slate-950/80 px-3 py-2 font-medium text-slate-100 transition hover:border-amber-300/30 hover:text-white sm:flex-none"
               >
                 <Icon name="mdi:api" class="size-3.5" />
                 Open JSON feed
@@ -576,13 +578,13 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
               :key="stat.label"
               class="rounded-3xl border border-white/8 bg-white/4 p-4"
             >
-              <p class="text-[10px] font-medium uppercase tracking-[0.26em] text-slate-400">
+              <p class="text-xs font-medium uppercase tracking-widest text-slate-400">
                 {{ stat.label }}
               </p>
               <p class="mt-2 text-2xl font-semibold tracking-tight text-white">
                 {{ stat.value }}
               </p>
-              <p class="mt-1 text-[12px] leading-5 text-slate-400/85">{{ stat.note }}</p>
+              <p class="mt-1 text-xs leading-5 text-slate-400/85">{{ stat.note }}</p>
             </div>
           </div>
         </div>
@@ -591,9 +593,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
       <div v-if="error && !loadedItems.length" class="news-surface rounded-4xl p-5 sm:p-6">
         <div class="rounded-3xl border border-rose-400/25 bg-rose-400/10 p-4 text-rose-100">
           <p class="text-sm font-medium">The news feed failed to load.</p>
-          <p class="mt-2 text-[13px] text-rose-100/80">
-            Try refreshing and request the feed again.
-          </p>
+          <p class="mt-2 text-sm text-rose-100/80">Try refreshing and request the feed again.</p>
         </div>
       </div>
 
@@ -625,7 +625,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
             class="relative z-10 grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(15rem,0.65fr)] lg:items-start"
           >
             <div class="space-y-5">
-              <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-300/76">
+              <div class="flex flex-wrap items-center gap-2 text-xs text-slate-300/76">
                 <span
                   class="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5 font-medium text-cyan-100"
                 >
@@ -662,14 +662,14 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
 
               <div class="space-y-3">
                 <h2
-                  class="news-serif text-xl leading-tight font-semibold tracking-[-0.03em] text-white sm:text-2xl"
+                  class="news-serif text-xl leading-tight font-semibold tracking-tight text-white sm:text-2xl"
                 >
                   {{ featuredStory.title }}
                 </h2>
                 <HtmlContent v-if="leadSummary" :html="leadSummary" variant="lead" />
               </div>
 
-              <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
+              <div class="flex flex-wrap items-center gap-3 text-xs text-slate-400">
                 <span
                   class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5"
                 >
@@ -687,7 +687,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
               <div class="flex flex-wrap items-center gap-2.5">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-2 rounded-full bg-cyan-300/90 px-4 py-2 text-[12px] font-semibold text-slate-950 transition hover:bg-cyan-200"
+                  class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-cyan-300/90 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-cyan-200 sm:w-auto"
                   @click="openFeedItem(featuredStory)"
                 >
                   <Icon name="mdi:text-box-search-outline" class="size-3.5" />
@@ -697,7 +697,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                   :href="featuredStory.link"
                   target="_blank"
                   rel="noreferrer noopener"
-                  class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[12px] font-medium text-slate-100 transition hover:border-white/20 hover:bg-white/8"
+                  class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-slate-100 transition hover:border-white/20 hover:bg-white/8 sm:w-auto"
                   @click="handleOpenOriginalItem(featuredStory)"
                 >
                   <Icon name="mdi:open-in-new" class="size-3.5" />
@@ -714,14 +714,14 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                 :class="getItemShellClass(item)"
               >
                 <div
-                  class="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.22em] text-slate-500"
+                  class="flex items-center justify-between gap-2 text-xs uppercase tracking-wider text-slate-500"
                 >
                   <span>{{ formatSource(item.sourceHost) }}</span>
                   <span class="tracking-normal normal-case">{{
                     formatRelativeDate(item.pubDate)
                   }}</span>
                 </div>
-                <div class="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-400">
                   <span
                     class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
                     :class="getReadStateClass(item)"
@@ -745,10 +745,10 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                     {{ item.title }}
                   </span>
                 </button>
-                <p class="mt-2 text-[12px] leading-5 text-slate-400/84">
+                <p class="mt-2 text-xs leading-5 text-slate-400/84">
                   {{ summarize(item.description, 120) }}
                 </p>
-                <div class="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span>{{ item.score }} pts</span>
                   <span class="h-1 w-1 rounded-full bg-slate-700" />
                   <span>{{ formatAbsoluteDate(item.pubDate) }}</span>
@@ -761,17 +761,17 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
         <section class="news-surface rounded-4xl p-5 sm:p-6">
           <div class="flex flex-wrap items-end justify-between gap-4 border-b border-white/8 pb-4">
             <div class="space-y-2">
-              <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+              <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">
                 Main feed
               </p>
               <div>
-                <h3 class="news-serif text-[1.7rem] font-semibold tracking-[-0.03em] text-white">
+                <h3 class="news-serif text-2xl font-semibold tracking-tight text-white">
                   Latest ranked updates
                 </h3>
-                <p class="mt-1 max-w-2xl text-[12px] leading-5 text-slate-400/84">
+                <p class="mt-1 max-w-2xl text-xs leading-5 text-slate-400/84">
                   {{ feedSummary }}
                 </p>
-                <p class="mt-2 text-[11px] leading-5 text-slate-500">
+                <p class="mt-2 text-xs leading-5 text-slate-500">
                   Green cards were published today. Amber status means unread. Slate status means
                   already opened.
                 </p>
@@ -779,7 +779,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
             </div>
 
             <div
-              class="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-[11px] text-slate-300/84"
+              class="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-slate-300/84"
             >
               Page {{ currentPage || 1 }} / {{ totalPages || 1 }}
             </div>
@@ -787,7 +787,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
 
           <div v-if="!feedItems.length" class="pt-5">
             <div
-              class="rounded-3xl border border-dashed border-white/10 bg-slate-950/55 px-4 py-8 text-center text-[12px] text-slate-400"
+              class="rounded-3xl border border-dashed border-white/10 bg-slate-950/55 px-4 py-8 text-center text-xs text-slate-400"
             >
               More stories will appear here as the next page loads.
             </div>
@@ -801,7 +801,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
               :class="getItemShellClass(item)"
             >
               <div class="space-y-3">
-                <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span
                     class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1"
                   >
@@ -832,7 +832,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
 
                 <button type="button" class="block text-left" @click="openFeedItem(item)">
                   <span
-                    class="news-serif text-[1.35rem] leading-7 font-semibold tracking-[-0.02em] transition group-hover:text-cyan-100"
+                    class="news-serif text-xl leading-7 font-semibold tracking-tight transition group-hover:text-cyan-100"
                     :class="getItemTitleClass(item)"
                   >
                     {{ item.title }}
@@ -841,7 +841,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
 
                 <HtmlContent :html="getPreviewHtml(item)" variant="preview" />
 
-                <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
+                <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
                   <span>{{ formatAbsoluteDate(item.pubDate) }}</span>
                   <span class="h-1 w-1 rounded-full bg-slate-700" />
                   <span>{{ item.score }} points</span>
@@ -870,15 +870,15 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
               </div>
             </article>
 
-            <div v-if="isLoadingMore" class="py-5 text-center text-[12px] text-slate-500">
+            <div v-if="isLoadingMore" class="py-5 text-center text-xs text-slate-500">
               Loading another page of stories...
             </div>
 
-            <div v-else-if="hasMore" class="py-5 text-center text-[12px] text-slate-500">
+            <div v-else-if="hasMore" class="py-5 text-center text-xs text-slate-500">
               <p>Scroll down to continue loading the feed.</p>
               <button
                 type="button"
-                class="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-medium text-slate-100 transition hover:border-cyan-300/25 hover:text-cyan-100"
+                class="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-100 transition hover:border-cyan-300/25 hover:text-cyan-100"
                 @click="loadMore"
               >
                 <Icon name="mdi:arrow-down-circle-outline" class="size-3.5" />
@@ -897,32 +897,26 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
     >
       <div class="space-y-2">
         <section class="news-surface rounded-4xl p-5">
-          <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
-            Feed notes
-          </p>
-          <h3 class="news-serif mt-2 text-lg font-semibold tracking-[-0.03em] text-white">
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Feed notes</p>
+          <h3 class="news-serif mt-2 text-lg font-semibold tracking-tight text-white">
             Built for checking updates fast
           </h3>
-          <p class="mt-2 text-[12px] leading-5 text-slate-400/84">
+          <p class="mt-2 text-xs leading-5 text-slate-400/84">
             The feed keeps the strongest story on top, pushes supporting items beside it, and leaves
             the rest in a clean chronological scanline ranked by signal.
           </p>
 
           <div class="mt-4 grid gap-3">
             <div class="rounded-3xl border border-white/8 bg-white/4 p-4">
-              <p class="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-                Loaded
-              </p>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Loaded</p>
               <p class="mt-2 text-2xl font-semibold tracking-tight text-white">
                 {{ loadedItems.length }}
               </p>
-              <p class="mt-1 text-[12px] leading-5 text-slate-400/84">stories currently rendered</p>
+              <p class="mt-1 text-xs leading-5 text-slate-400/84">stories currently rendered</p>
             </div>
             <div class="rounded-3xl border border-white/8 bg-white/4 p-4">
-              <p class="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-                Pipeline
-              </p>
-              <p class="mt-2 text-[12px] leading-5 text-slate-300/80">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Pipeline</p>
+              <p class="mt-2 text-xs leading-5 text-slate-300/80">
                 The endpoint merges all configured feeds, removes duplicates, scores the results,
                 and paginates them for continuous reading.
               </p>
@@ -931,15 +925,15 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
         </section>
 
         <section class="news-surface rounded-4xl p-5">
-          <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">
             Loading state
           </p>
-          <h3 class="news-serif mt-2 text-lg font-semibold tracking-[-0.03em] text-white">
+          <h3 class="news-serif mt-2 text-lg font-semibold tracking-tight text-white">
             Feed progress
           </h3>
 
           <div class="mt-4 rounded-3xl border border-white/8 bg-white/4 p-4">
-            <div class="flex items-center justify-between gap-3 text-[11px] text-slate-400/90">
+            <div class="flex items-center justify-between gap-3 text-xs text-slate-400/90">
               <span>Loaded coverage</span>
               <span class="font-semibold text-white">{{ loadedProgress }}%</span>
             </div>
@@ -949,10 +943,10 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                 :style="{ width: `${loadedProgress}%` }"
               />
             </div>
-            <p class="mt-3 text-[12px] leading-5 text-slate-300/84">
+            <p class="mt-3 text-xs leading-5 text-slate-300/84">
               {{ loadedItems.length }} of {{ totalItems || loadedItems.length }} stories loaded.
             </p>
-            <p class="mt-1 text-[11px] leading-5 text-slate-500">
+            <p class="mt-1 text-xs leading-5 text-slate-500">
               {{
                 remainingItems
                   ? `${remainingItems} stories remain in later pages.`
@@ -963,10 +957,8 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
         </section>
 
         <section class="news-surface rounded-4xl p-5">
-          <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
-            Sources now
-          </p>
-          <h3 class="news-serif mt-2 text-lg font-semibold tracking-[-0.03em] text-white">
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Sources now</p>
+          <h3 class="news-serif mt-2 text-lg font-semibold tracking-tight text-white">
             Most active publishers
           </h3>
 
@@ -976,8 +968,8 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
               :key="source.label"
               class="flex items-center justify-between gap-3 rounded-3xl border border-white/8 bg-white/4 px-4 py-1.5"
             >
-              <span class="text-[12px] font-medium text-slate-100">{{ source.label }}</span>
-              <span class="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] text-slate-400">
+              <span class="text-xs font-medium text-slate-100">{{ source.label }}</span>
+              <span class="rounded-full bg-slate-900 px-2.5 py-1 text-xs text-slate-400">
                 {{ source.count }}
               </span>
             </div>
@@ -985,10 +977,8 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
         </section>
 
         <section class="news-surface rounded-4xl p-5">
-          <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
-            Tracked set
-          </p>
-          <h3 class="news-serif mt-2 text-lg font-semibold tracking-[-0.03em] text-white">
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Tracked set</p>
+          <h3 class="news-serif mt-2 text-lg font-semibold tracking-tight text-white">
             Monitored sources
           </h3>
 
@@ -996,7 +986,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
             <span
               v-for="source in MONITORED_SOURCES"
               :key="source"
-              class="inline-flex items-center rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-[11px] text-slate-300/84"
+              class="inline-flex items-center rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-slate-300/84"
             >
               {{ source }}
             </span>
@@ -1007,21 +997,19 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
   </section>
 
   <div
-    class="pointer-events-none fixed inset-x-0 bottom-3 z-70 flex justify-center px-4 sm:bottom-4"
+    class="pointer-events-none fixed inset-x-0 bottom-2 z-70 flex justify-center px-3 sm:bottom-4 sm:px-4"
   >
     <a
       href="https://nemanjadragun.com"
       target="_blank"
       rel="noreferrer noopener"
-      class="pointer-events-auto inline-flex max-w-full items-center gap-2 rounded-full border border-cyan-300/30 bg-[linear-gradient(140deg,rgba(5,10,20,0.94),rgba(8,25,34,0.92),rgba(32,14,10,0.9))] px-4 py-2 text-[11px] font-medium text-slate-100 shadow-[0_10px_34px_rgba(2,6,23,0.45)] backdrop-blur-md transition duration-200 hover:border-amber-300/45 hover:text-white"
+      class="pointer-events-auto inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-full border border-cyan-300/30 bg-[linear-gradient(140deg,rgba(5,10,20,0.94),rgba(8,25,34,0.92),rgba(32,14,10,0.9))] px-3 py-2 text-xs font-medium text-slate-100 shadow-[0_10px_34px_rgba(2,6,23,0.45)] backdrop-blur-md transition duration-200 hover:border-amber-300/45 hover:text-white sm:w-auto sm:max-w-full sm:px-4"
       aria-label="Visit nemanjadragun.com"
     >
-      <span
-        class="inline-flex size-6 items-center justify-center rounded-full bg-white/8 text-[12px]"
-      >
+      <span class="inline-flex size-6 items-center justify-center rounded-full bg-white/8 text-xs">
         ✨
       </span>
-      <span class="truncate tracking-[0.01em]">Made with ❤️ by Nemanja Dragun</span>
+      <span class="truncate text-center tracking-wide">Made with ❤️ by Nemanja Dragun</span>
     </a>
   </div>
 
@@ -1038,11 +1026,11 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
           class="flex items-start justify-between gap-4 border-b border-white/8 px-5 py-5 sm:px-6"
         >
           <div class="space-y-2">
-            <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+            <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">
               Story details
             </p>
             <h3
-              class="news-serif text-[1.8rem] leading-tight font-semibold tracking-[-0.03em] text-white sm:text-[2.1rem]"
+              class="news-serif text-2xl leading-tight font-semibold tracking-tight text-white sm:text-4xl"
             >
               {{ activeFeedItem.title }}
             </h3>
@@ -1058,7 +1046,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
         </div>
 
         <div class="overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
-          <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+          <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
             <span
               class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5"
             >
@@ -1081,10 +1069,8 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
 
           <div class="mt-5 grid gap-3 sm:grid-cols-3">
             <div class="rounded-3xl border border-white/8 bg-white/4 p-4">
-              <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                Source
-              </p>
-              <p class="mt-2 text-[13px] font-medium text-white">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Source</p>
+              <p class="mt-2 text-sm font-medium text-white">
                 {{ formatSource(activeFeedItem.sourceHost) }}
               </p>
             </div>
@@ -1097,21 +1083,21 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
               "
             >
               <p
-                class="text-[10px] font-semibold uppercase tracking-[0.22em]"
+                class="text-xs font-semibold uppercase tracking-wider"
                 :class="isItemFromToday(activeFeedItem) ? 'text-emerald-200/75' : 'text-slate-500'"
               >
                 {{ isItemFromToday(activeFeedItem) ? "Published today" : "Published" }}
               </p>
               <p
-                class="mt-2 text-[13px] font-medium"
+                class="mt-2 text-sm font-medium"
                 :class="isItemFromToday(activeFeedItem) ? 'text-emerald-50' : 'text-white'"
               >
                 {{ formatRelativeDate(activeFeedItem.pubDate) }}
               </p>
             </div>
             <div class="rounded-3xl border p-4" :class="getReadStateClass(activeFeedItem)">
-              <p class="text-[10px] font-semibold uppercase tracking-[0.22em]">Read state</p>
-              <p class="mt-2 inline-flex items-center gap-1.5 text-[13px] font-medium">
+              <p class="text-xs font-semibold uppercase tracking-wider">Read state</p>
+              <p class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium">
                 <Icon :name="getReadStateIcon(activeFeedItem)" class="size-3.5" />
                 {{ getReadStateLabel(activeFeedItem) }}
               </p>
@@ -1119,25 +1105,21 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
             <div
               class="rounded-3xl border border-white/8 bg-white/4 p-4 sm:col-span-3 lg:col-span-1"
             >
-              <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Feed signal
               </p>
-              <p class="mt-2 text-[13px] font-medium text-white">
-                {{ activeFeedItem.score }} points
-              </p>
+              <p class="mt-2 text-sm font-medium text-white">{{ activeFeedItem.score }} points</p>
             </div>
           </div>
 
           <div class="mt-5 rounded-4xl border border-white/8 bg-white/4 p-5">
-            <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-              Summary
-            </p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Summary</p>
             <HtmlContent
               v-if="activeFeedItemDescriptionHtml"
               :html="activeFeedItemDescriptionHtml"
               variant="detail"
             />
-            <p v-else class="mt-4 text-[13px] leading-6 text-slate-300/84">
+            <p v-else class="mt-4 text-sm leading-6 text-slate-300/84">
               No additional description is available for this item.
             </p>
           </div>
@@ -1146,13 +1128,13 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
         <div
           class="flex flex-wrap items-center justify-between gap-3 border-t border-white/8 px-5 py-4 sm:px-6"
         >
-          <p class="text-[11px] text-slate-500">Press Escape or click outside to close.</p>
+          <p class="text-xs text-slate-500">Press Escape or click outside to close.</p>
 
           <a
             :href="activeFeedItem.link"
             target="_blank"
             rel="noreferrer noopener"
-            class="inline-flex items-center gap-2 rounded-full bg-cyan-300/90 px-4 py-2 text-[12px] font-semibold text-slate-950 transition hover:bg-cyan-200"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-cyan-300/90 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-cyan-200 sm:w-auto"
             @click="handleOpenOriginalItem(activeFeedItem)"
           >
             <Icon name="mdi:open-in-new" class="size-3.5" />
