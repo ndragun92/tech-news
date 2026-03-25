@@ -459,14 +459,6 @@ const leadSummary = computed(() => {
   return renderPreviewHtml(featuredStory.value.description);
 });
 
-const feedSummary = computed(() => {
-  if (!totalItems.value) {
-    return "A ranked feed for following updates across the selected sources.";
-  }
-
-  return `${totalItems.value} ranked stories across ${sourceCount.value} active sources. ${unseenCount.value} are still unread.`;
-});
-
 const loadedProgress = computed(() => {
   if (!totalItems.value) {
     return 0;
@@ -564,42 +556,41 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
     class="grid gap-3 pb-20 sm:gap-4 sm:pb-24 xl:min-h-[calc(100dvh-11.5rem)] xl:grid-cols-[minmax(0,1.62fr)_20rem] xl:items-start"
   >
     <div class="space-y-3 sm:space-y-4">
-      <header class="news-surface relative overflow-hidden rounded-4xl p-4 sm:p-6">
-        <div
-          class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_22%),radial-gradient(circle_at_85%_18%,rgba(251,191,36,0.12),transparent_22%),linear-gradient(180deg,rgba(10,17,30,0.92),rgba(7,12,22,0.82))]"
-        />
-
-        <div class="relative z-10 space-y-5">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div class="max-w-3xl space-y-3">
-              <p class="text-xs font-semibold uppercase tracking-widest text-cyan-200/70">
-                Vue · Nuxt · Node.js · TypeScript
-              </p>
-              <div class="space-y-2">
-                <h1
-                  class="news-serif max-w-3xl text-2xl font-semibold tracking-tight text-white sm:text-3xl"
-                >
-                  Ranked dev news for the Vue, Nuxt, and Node.js ecosystem.
-                </h1>
-                <p class="max-w-2xl text-sm text-slate-300/78">
-                  Stories are pulled from 20+ RSS feeds across the Vue, Nuxt, Node.js, and
-                  TypeScript ecosystem — scored by relevance, deduplicated, and sorted by publish
-                  date.
-                </p>
-              </div>
+      <header class="news-surface relative overflow-hidden rounded-4xl p-4 sm:p-6 space-y-2">
+        <!-- Compact controls bar -->
+        <div class="news-surface rounded-4xl px-4 py-3 sm:px-5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <!-- Live stats chips -->
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <span
+                class="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-300/8 px-2.5 py-1 font-medium text-emerald-100"
+              >
+                <Icon name="mdi:calendar-today" class="size-3" />
+                {{ todayCount }} today
+              </span>
+              <span
+                class="inline-flex items-center gap-1.5 rounded-full border border-amber-300/25 bg-amber-300/8 px-2.5 py-1 font-medium text-amber-100"
+              >
+                <Icon name="mdi:bookmark-outline" class="size-3" />
+                {{ unseenCount }} unread
+              </span>
+              <span
+                class="hidden items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-2.5 py-1 text-slate-300/84 sm:inline-flex"
+              >
+                <Icon name="mdi:rss" class="size-3 text-cyan-300/70" />
+                {{ sourceCount }} sources
+              </span>
             </div>
-
-            <div
-              class="flex w-full flex-wrap items-center gap-2 text-xs text-slate-300/76 sm:w-auto"
-            >
-              <div class="relative flex-1 sm:flex-none">
+            <!-- Controls -->
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <div class="relative">
                 <Icon
                   name="mdi:filter-variant"
-                  class="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400"
+                  class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-slate-400"
                 />
                 <select
                   v-model="selectedSource"
-                  class="w-full appearance-none rounded-full border border-white/10 bg-white/6 py-2 pl-8 pr-8 font-medium text-slate-100 transition hover:border-cyan-300/35 hover:bg-cyan-300/10 focus:outline-none sm:w-auto"
+                  class="appearance-none rounded-full border border-white/10 bg-white/5 py-1.5 pl-7 pr-6 font-medium text-slate-100 transition hover:border-white/20 focus:outline-none"
                   style="background-color: #0b1220; color: #e2e8f0"
                 >
                   <option :value="null">All sources</option>
@@ -609,371 +600,382 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                 </select>
                 <Icon
                   name="mdi:chevron-down"
-                  class="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400"
+                  class="pointer-events-none absolute right-2 top-1/2 size-3 -translate-y-1/2 text-slate-400"
                 />
               </div>
               <button
                 type="button"
                 role="switch"
                 :aria-checked="showOnlyUnopened"
-                class="inline-flex flex-1 items-center justify-center gap-2 rounded-full border px-3 py-2 font-medium transition sm:flex-none"
+                class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 font-medium transition"
                 :class="
                   showOnlyUnopened
                     ? 'border-amber-300/35 bg-amber-300/12 text-amber-100'
-                    : 'border-white/10 bg-white/6 text-slate-100 hover:border-cyan-300/35 hover:bg-cyan-300/10'
+                    : 'border-white/10 bg-white/5 text-slate-100 hover:border-white/20'
                 "
                 @click="showOnlyUnopened = !showOnlyUnopened"
               >
                 <Icon
                   :name="showOnlyUnopened ? 'mdi:toggle-switch' : 'mdi:toggle-switch-off-outline'"
-                  class="size-4"
+                  class="size-3.5"
                 />
-                <span>{{ showOnlyUnopened ? "Only unopened" : "All read states" }}</span>
+                Unread only
               </button>
               <button
                 type="button"
-                class="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-2 font-medium text-slate-100 transition hover:border-cyan-300/35 hover:bg-cyan-300/10 sm:flex-none"
+                class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 font-medium text-slate-100 transition hover:border-white/20"
                 @click="refreshNews"
               >
                 <Icon name="mdi:refresh" class="size-3.5" />
-                <span>{{ isRefreshing ? "Refreshing" : "Refresh feed" }}</span>
+                {{ isRefreshing ? "Refreshing…" : "Refresh" }}
               </button>
               <a
                 href="/api/news/tech"
                 target="_blank"
                 rel="noreferrer noopener"
-                class="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/10 bg-slate-950/80 px-3 py-2 font-medium text-slate-100 transition hover:border-amber-300/30 hover:text-white sm:flex-none"
+                class="hidden items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 font-medium text-slate-100 transition hover:border-amber-300/30 sm:inline-flex"
               >
                 <Icon name="mdi:api" class="size-3.5" />
-                Open JSON feed
+                JSON
               </a>
             </div>
           </div>
-
-          <div class="grid gap-2.5 sm:grid-cols-3">
-            <div
-              v-for="stat in countStats"
-              :key="stat.label"
-              class="rounded-xl border border-white/8 bg-white/4 p-3"
+          <!-- Active filter chips -->
+          <div v-if="hasActiveFeedFilter" class="mt-2 flex flex-wrap gap-1.5">
+            <button
+              v-if="selectedSource"
+              type="button"
+              class="inline-flex items-center gap-1 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-2.5 py-1 text-xs font-medium text-cyan-100 transition hover:bg-cyan-300/18"
+              @click="selectedSource = null"
             >
-              <p class="text-xs font-medium uppercase tracking-widest text-slate-400">
-                {{ stat.label }}
-              </p>
-              <p class="mt-2 text-2xl font-semibold tracking-tight text-white">
-                {{ stat.value }}
-              </p>
-              <p class="mt-1 text-xs leading-5 text-slate-400/85">{{ stat.note }}</p>
-            </div>
+              <Icon name="mdi:filter-remove-outline" class="size-3" />
+              {{ selectedSource }}
+              <Icon name="mdi:close" class="size-2.5" />
+            </button>
+            <button
+              v-if="showOnlyUnopened"
+              type="button"
+              class="inline-flex items-center gap-1 rounded-full border border-amber-300/35 bg-amber-300/10 px-2.5 py-1 text-xs font-medium text-amber-100 transition hover:bg-amber-300/18"
+              @click="showOnlyUnopened = false"
+            >
+              <Icon name="mdi:bookmark-remove-outline" class="size-3" />
+              Unread only
+              <Icon name="mdi:close" class="size-2.5" />
+            </button>
           </div>
         </div>
-      </header>
 
-      <div v-if="error && !loadedItems.length" class="news-surface rounded-4xl p-5 sm:p-6">
-        <div class="rounded-3xl border border-rose-400/25 bg-rose-400/10 p-4 text-rose-100">
-          <p class="text-sm font-medium">The news feed failed to load.</p>
-          <p class="mt-2 text-sm text-rose-100/80">Try refreshing and request the feed again.</p>
+        <div v-if="error && !loadedItems.length" class="news-surface rounded-4xl p-5 sm:p-6">
+          <div class="rounded-3xl border border-rose-400/25 bg-rose-400/10 p-4 text-rose-100">
+            <p class="text-sm font-medium">The news feed failed to load.</p>
+            <p class="mt-2 text-sm text-rose-100/80">Try refreshing and request the feed again.</p>
+          </div>
         </div>
-      </div>
 
-      <div
-        v-else-if="pending && !loadedItems.length"
-        class="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)]"
-      >
-        <div class="news-surface h-88 animate-pulse rounded-4xl" />
-        <div class="grid gap-3">
-          <div
-            v-for="index in 4"
-            :key="index"
-            class="news-surface h-32 animate-pulse rounded-3xl"
-          />
-        </div>
-      </div>
-
-      <template v-else>
-        <article
-          v-if="featuredStory"
-          class="news-surface relative overflow-hidden rounded-4xl p-5 sm:p-6"
-          :class="getItemShellClass(featuredStory)"
+        <div
+          v-else-if="pending && !loadedItems.length"
+          class="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)]"
         >
-          <div
-            class="absolute inset-y-0 right-0 hidden w-1/3 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.12),transparent_64%)] lg:block"
-          />
+          <div class="news-surface h-88 animate-pulse rounded-4xl" />
+          <div class="grid gap-3">
+            <div
+              v-for="index in 4"
+              :key="index"
+              class="news-surface h-32 animate-pulse rounded-3xl"
+            />
+          </div>
+        </div>
 
-          <div
-            class="relative z-10 grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(15rem,0.65fr)] lg:items-start"
+        <template v-else>
+          <article
+            v-if="featuredStory"
+            class="news-surface relative overflow-hidden rounded-4xl p-5 sm:p-6"
+            :class="getItemShellClass(featuredStory)"
           >
-            <div class="space-y-4">
-              <div class="flex flex-wrap items-center gap-1.5 text-xs text-slate-300/76">
+            <div
+              class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.1),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(251,191,36,0.07),transparent_22%)]"
+            />
+            <div class="relative z-10 p-5 sm:p-7">
+              <!-- Meta badges -->
+              <div class="flex flex-wrap items-center gap-1.5 text-xs">
                 <span
-                  class="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1 font-medium text-cyan-100"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1 font-semibold text-cyan-100"
                 >
-                  <Icon name="mdi:star-four-points-outline" class="size-3.5" />
-                  Lead update
+                  <Icon name="mdi:star-four-points-outline" class="size-3" />
+                  Lead story
                 </span>
                 <span
-                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-slate-400"
                 >
-                  <Icon name="mdi:newspaper-variant-outline" class="size-3.5" />
+                  <Icon name="mdi:newspaper-variant-outline" class="size-3" />
                   {{ formatSource(featuredStory.sourceHost) }}
                 </span>
                 <span
-                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-slate-400"
                 >
-                  <Icon name="mdi:clock-outline" class="size-3.5" />
+                  <Icon name="mdi:clock-outline" class="size-3" />
                   {{ formatRelativeDate(featuredStory.pubDate) }}
-                </span>
-                <span
-                  class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
-                  :class="getReadStateClass(featuredStory)"
-                >
-                  <Icon :name="getReadStateIcon(featuredStory)" class="size-3.5" />
-                  {{ getReadStateLabel(featuredStory) }}
                 </span>
                 <span
                   v-if="isItemFromToday(featuredStory)"
                   class="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-emerald-100"
                 >
-                  <Icon name="mdi:calendar-today" class="size-3.5" />
+                  <Icon name="mdi:calendar-today" class="size-3" />
                   Fresh today
                 </span>
-              </div>
-
-              <div class="space-y-3">
-                <h2
-                  class="news-serif text-xl leading-tight font-semibold tracking-tight text-white sm:text-2xl"
-                >
-                  {{ featuredStory.title }}
-                </h2>
-                <HtmlContent v-if="leadSummary" :html="leadSummary" variant="lead" />
-              </div>
-
-              <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
                 <span
-                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1"
+                  class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
+                  :class="getReadStateClass(featuredStory)"
                 >
-                  <Icon name="mdi:star-outline" class="size-3.5" />
-                  Signal {{ featuredStory.score }}
-                </span>
-                <span
-                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1"
-                >
-                  <Icon name="mdi:calendar-range" class="size-3.5" />
-                  {{ formatAbsoluteDate(featuredStory.pubDate) }}
+                  <Icon :name="getReadStateIcon(featuredStory)" class="size-3" />
+                  {{ getReadStateLabel(featuredStory) }}
                 </span>
               </div>
 
-              <div class="flex flex-wrap items-center gap-2.5">
+              <!-- Headline -->
+              <h2
+                class="news-serif mt-5 text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-[2.6rem]"
+              >
+                {{ featuredStory.title }}
+              </h2>
+
+              <!-- Lead description -->
+              <HtmlContent
+                v-if="leadSummary"
+                :html="leadSummary"
+                variant="lead"
+                class="mt-4 max-w-3xl"
+              />
+
+              <!-- Secondary meta -->
+              <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span>{{ formatAbsoluteDate(featuredStory.pubDate) }}</span>
+                <span class="h-1 w-1 rounded-full bg-slate-700" />
+                <span>Signal {{ featuredStory.score }}</span>
+              </div>
+
+              <!-- CTAs -->
+              <div class="mt-5 flex flex-wrap items-center gap-2.5">
                 <button
                   type="button"
-                  class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-cyan-300/90 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-cyan-200 sm:w-auto"
+                  class="inline-flex items-center gap-2 rounded-full bg-cyan-300/90 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
                   @click="openFeedItem(featuredStory)"
                 >
-                  <Icon name="mdi:text-box-search-outline" class="size-3.5" />
+                  <Icon name="mdi:text-box-search-outline" class="size-4" />
                   Read details
                 </button>
                 <a
                   :href="featuredStory.link"
                   target="_blank"
                   rel="noreferrer noopener"
-                  class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-slate-100 transition hover:border-white/20 hover:bg-white/8 sm:w-auto"
+                  class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/6 px-5 py-2.5 text-sm font-medium text-slate-100 transition hover:border-white/28 hover:bg-white/10"
                   @click="handleOpenOriginalItem(featuredStory)"
                 >
-                  <Icon name="mdi:open-in-new" class="size-3.5" />
-                  Open original article
+                  <Icon name="mdi:open-in-new" class="size-4" />
+                  Open article
                 </a>
               </div>
             </div>
+          </article>
 
-            <div class="grid gap-3">
-              <div
-                v-for="item in sideStories"
-                :key="item.link"
-                class="rounded-xl p-3 transition hover:border-cyan-300/20 hover:bg-cyan-300/6"
-                :class="getItemShellClass(item)"
-              >
-                <div
-                  class="flex items-center justify-between gap-2 text-xs uppercase tracking-wider text-slate-500"
-                >
-                  <span>{{ formatSource(item.sourceHost) }}</span>
-                  <span class="tracking-normal normal-case">{{
-                    formatRelativeDate(item.pubDate)
-                  }}</span>
-                </div>
-                <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                  <span
-                    class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
-                    :class="getReadStateClass(item)"
-                  >
-                    <Icon :name="getReadStateIcon(item)" class="size-3.5" />
-                    {{ getReadStateLabel(item) }}
-                  </span>
-                  <span
-                    v-if="isItemFromToday(item)"
-                    class="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-emerald-100"
-                  >
-                    <Icon name="mdi:calendar-today" class="size-3.5" />
-                    Fresh today
-                  </span>
-                </div>
-                <button type="button" class="mt-2 text-left" @click="openFeedItem(item)">
-                  <span
-                    class="news-serif text-lg leading-6 font-semibold transition hover:text-cyan-100"
-                    :class="getItemTitleClass(item)"
-                  >
-                    {{ item.title }}
-                  </span>
-                </button>
-                <p class="mt-2 text-xs leading-5 text-slate-400/84">
-                  {{ summarize(item.description, 120) }}
-                </p>
-                <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                  <span>{{ item.score }} pts</span>
-                  <span class="h-1 w-1 rounded-full bg-slate-700" />
-                  <span>{{ formatAbsoluteDate(item.pubDate) }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </article>
-
-        <section class="news-surface rounded-4xl p-4 sm:p-5">
-          <div class="flex flex-wrap items-end justify-between gap-4 border-b border-white/8 pb-3">
-            <div class="space-y-2">
-              <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">
-                Main feed
-              </p>
-              <div>
-                <h3 class="news-serif text-2xl font-semibold tracking-tight text-white">
-                  Latest ranked updates
-                </h3>
-                <p class="mt-1 max-w-2xl text-xs leading-5 text-slate-400/84">
-                  {{ feedSummary }}
-                </p>
-                <p class="mt-2 text-xs leading-5 text-slate-500">
-                  Green cards were published today. Amber status means unread. Slate status means
-                  already opened.
-                </p>
-              </div>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-2">
-              <button
-                v-if="selectedSource"
-                type="button"
-                class="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/30 bg-cyan-300/12 px-3 py-1.5 text-xs font-medium text-cyan-100 transition hover:border-cyan-300/50 hover:bg-cyan-300/20"
-                @click="selectedSource = null"
-              >
-                <Icon name="mdi:filter-remove-outline" class="size-3.5" />
-                {{ selectedSource }}
-                <Icon name="mdi:close" class="size-3" />
-              </button>
-              <button
-                v-if="showOnlyUnopened"
-                type="button"
-                class="inline-flex items-center gap-1.5 rounded-full border border-amber-300/35 bg-amber-300/12 px-3 py-1.5 text-xs font-medium text-amber-100 transition hover:border-amber-300/55 hover:bg-amber-300/20"
-                @click="showOnlyUnopened = false"
-              >
-                <Icon name="mdi:bookmark-remove-outline" class="size-3.5" />
-                Only unopened
-                <Icon name="mdi:close" class="size-3" />
-              </button>
-              <div
-                class="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-slate-300/84"
-              >
-                Page {{ currentPage || 1 }} / {{ totalPages || 1 }}
-              </div>
-            </div>
-          </div>
-
-          <div v-if="!feedItems.length" class="pt-5">
-            <div
-              class="rounded-3xl border border-dashed border-white/10 bg-slate-950/55 px-4 py-8 text-center text-xs text-slate-400"
-            >
-              <template v-if="selectedSource">
-                No stories from
-                <span class="font-medium text-slate-200">{{ selectedSource }}</span> in the current
-                feed.
-              </template>
-              <template v-else-if="showOnlyUnopened">
-                No unopened stories match the current selection.
-              </template>
-              <template v-else> More stories will appear here as the next page loads. </template>
-            </div>
-
-            <div v-if="isLoadingMore" class="py-5 text-center text-xs text-slate-500">
-              Loading another page of stories...
-            </div>
-
-            <div v-else-if="hasMore" class="py-5 text-center text-xs text-slate-500">
-              <p>Scroll down to continue loading the feed.</p>
-              <button
-                type="button"
-                class="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-100 transition hover:border-cyan-300/25 hover:text-cyan-100"
-                @click="loadMore"
-              >
-                <Icon name="mdi:arrow-down-circle-outline" class="size-3.5" />
-                Load next page
-              </button>
-            </div>
-
-            <div v-if="hasMore" ref="feedBottomRef" class="h-px w-full" aria-hidden="true" />
-          </div>
-
-          <div v-else class="divide-y divide-white/8 space-y-2 mt-2">
+          <!-- Side stories — headlines row -->
+          <div v-if="sideStories.length" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <article
-              v-for="item in feedItems"
+              v-for="item in sideStories"
               :key="item.link"
-              class="group grid gap-3 rounded-xl px-4 py-4 transition lg:grid-cols-[minmax(0,1fr)_12rem] lg:gap-4"
+              class="news-surface rounded-3xl p-4 transition hover:border-cyan-300/20"
               :class="getItemShellClass(item)"
             >
-              <div class="space-y-2">
-                <div class="flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+              <div class="flex items-start justify-between gap-2 text-xs">
+                <span class="font-semibold uppercase tracking-wider text-slate-500">{{
+                  formatSource(item.sourceHost)
+                }}</span>
+                <span class="shrink-0 text-slate-600">{{ formatRelativeDate(item.pubDate) }}</span>
+              </div>
+
+              <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                <span
+                  class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs"
+                  :class="getReadStateClass(item)"
+                >
+                  <Icon :name="getReadStateIcon(item)" class="size-3" />
+                  {{ getReadStateLabel(item) }}
+                </span>
+                <span
+                  v-if="isItemFromToday(item)"
+                  class="inline-flex items-center gap-1 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2 py-0.5 text-xs text-emerald-100"
+                >
+                  <Icon name="mdi:calendar-today" class="size-3" />
+                  Today
+                </span>
+              </div>
+
+              <button type="button" class="mt-2.5 block text-left" @click="openFeedItem(item)">
+                <h3
+                  class="news-serif text-[1.05rem] font-semibold leading-snug transition hover:text-cyan-100"
+                  :class="getItemTitleClass(item)"
+                >
+                  {{ item.title }}
+                </h3>
+              </button>
+
+              <p class="mt-2 text-xs leading-5 text-slate-400/80">
+                {{ summarize(item.description, 110) }}
+              </p>
+
+              <div class="mt-3 flex items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 font-medium text-slate-300 transition hover:border-cyan-300/25 hover:text-cyan-100"
+                  @click="openFeedItem(item)"
+                >
+                  <Icon name="mdi:text-box-search-outline" class="size-3" />
+                  Preview
+                </button>
+                <a
+                  :href="item.link"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 font-medium text-slate-300 transition hover:border-cyan-300/25 hover:text-cyan-100"
+                  @click="handleOpenOriginalItem(item)"
+                >
+                  <Icon name="mdi:open-in-new" class="size-3" />
+                  Open
+                </a>
+              </div>
+            </article>
+          </div>
+
+          <!-- Main feed -->
+          <section class="news-surface overflow-hidden rounded-4xl">
+            <div
+              class="flex flex-wrap items-center justify-between gap-3 border-b border-white/8 px-5 py-4"
+            >
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Feed</p>
+                <h3 class="news-serif mt-1 text-xl font-semibold tracking-tight text-white">
+                  Latest ranked updates
+                </h3>
+              </div>
+              <div class="flex flex-wrap items-center gap-2 text-xs">
+                <button
+                  v-if="selectedSource"
+                  type="button"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/30 bg-cyan-300/12 px-3 py-1.5 font-medium text-cyan-100 transition hover:bg-cyan-300/20"
+                  @click="selectedSource = null"
+                >
+                  <Icon name="mdi:filter-remove-outline" class="size-3.5" />
+                  {{ selectedSource }}
+                  <Icon name="mdi:close" class="size-3" />
+                </button>
+                <button
+                  v-if="showOnlyUnopened"
+                  type="button"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-amber-300/35 bg-amber-300/12 px-3 py-1.5 font-medium text-amber-100 transition hover:bg-amber-300/20"
+                  @click="showOnlyUnopened = false"
+                >
+                  <Icon name="mdi:bookmark-remove-outline" class="size-3.5" />
+                  Unread only
+                  <Icon name="mdi:close" class="size-3" />
+                </button>
+                <div
+                  class="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-slate-400"
+                >
+                  {{ currentPage || 1 }} / {{ totalPages || 1 }}
+                </div>
+              </div>
+            </div>
+
+            <div v-if="!feedItems.length" class="p-5">
+              <div
+                class="rounded-3xl border border-dashed border-white/10 bg-slate-950/55 px-4 py-8 text-center text-xs text-slate-400"
+              >
+                <template v-if="selectedSource">
+                  No stories from
+                  <span class="font-medium text-slate-200">{{ selectedSource }}</span> in the
+                  current feed.
+                </template>
+                <template v-else-if="showOnlyUnopened">
+                  No unopened stories match the current selection.
+                </template>
+                <template v-else> More stories will appear here as the next page loads. </template>
+              </div>
+
+              <div v-if="isLoadingMore" class="py-5 text-center text-xs text-slate-500">
+                Loading another page of stories...
+              </div>
+
+              <div v-else-if="hasMore" class="py-5 text-center text-xs text-slate-500">
+                <p>Scroll down to continue loading the feed.</p>
+                <button
+                  type="button"
+                  class="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-100 transition hover:border-cyan-300/25 hover:text-cyan-100"
+                  @click="loadMore"
+                >
+                  <Icon name="mdi:arrow-down-circle-outline" class="size-3.5" />
+                  Load next page
+                </button>
+              </div>
+
+              <div v-if="hasMore" ref="feedBottomRef" class="h-px w-full" aria-hidden="true" />
+            </div>
+
+            <div v-else class="divide-y divide-white/6">
+              <article
+                v-for="item in feedItems"
+                :key="item.link"
+                class="group px-5 py-4 transition"
+                :class="getItemShellClass(item)"
+              >
+                <!-- Meta row -->
+                <div class="flex flex-wrap items-center gap-1.5 text-xs">
                   <span
-                    class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1"
+                    class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-slate-400"
                   >
-                    <Icon name="mdi:newspaper-variant-outline" class="size-3.5" />
+                    <Icon name="mdi:newspaper-variant-outline" class="size-3" />
                     {{ formatSource(item.sourceHost) }}
                   </span>
                   <span
-                    class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1"
+                    class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-slate-400"
                   >
-                    <Icon name="mdi:clock-outline" class="size-3.5" />
+                    <Icon name="mdi:clock-outline" class="size-3" />
                     {{ formatRelativeDate(item.pubDate) }}
                   </span>
                   <span
                     v-if="isItemFromToday(item)"
                     class="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-emerald-100"
                   >
-                    <Icon name="mdi:calendar-today" class="size-3.5" />
-                    Fresh today
+                    <Icon name="mdi:calendar-today" class="size-3" />
+                    Today
                   </span>
                   <span
                     class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
                     :class="getReadStateClass(item)"
                   >
-                    <Icon :name="getReadStateIcon(item)" class="size-3.5" />
+                    <Icon :name="getReadStateIcon(item)" class="size-3" />
                     {{ getReadStateLabel(item) }}
                   </span>
                 </div>
 
-                <button type="button" class="block text-left" @click="openFeedItem(item)">
-                  <span
-                    class="news-serif text-xl leading-7 font-semibold tracking-tight transition group-hover:text-cyan-100"
+                <!-- Title -->
+                <button
+                  type="button"
+                  class="mt-2 block w-full text-left"
+                  @click="openFeedItem(item)"
+                >
+                  <h3
+                    class="news-serif text-xl font-semibold leading-snug tracking-tight transition group-hover:text-cyan-100"
                     :class="getItemTitleClass(item)"
                   >
                     {{ item.title }}
-                  </span>
+                  </h3>
                 </button>
 
-                <HtmlContent :html="getPreviewHtml(item)" variant="preview" />
+                <!-- Preview -->
+                <HtmlContent :html="getPreviewHtml(item)" variant="preview" class="mt-2" />
 
-                <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                  <span>{{ formatAbsoluteDate(item.pubDate) }}</span>
-                  <span class="h-1 w-1 rounded-full bg-slate-700" />
-                  <span>{{ item.score }} points</span>
-                </div>
-
-                <div class="flex flex-wrap gap-2 text-xs">
+                <!-- Actions + secondary meta -->
+                <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
                   <button
                     type="button"
                     class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 font-medium text-slate-100 transition hover:border-cyan-300/25 hover:text-cyan-100"
@@ -992,104 +994,76 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                     <Icon name="mdi:open-in-new" class="size-3.5" />
                     Open
                   </a>
+                  <span class="ml-auto text-slate-600">
+                    {{ item.score }} pts · {{ formatAbsoluteDate(item.pubDate) }}
+                  </span>
                 </div>
+              </article>
+
+              <div v-if="isLoadingMore" class="py-5 text-center text-xs text-slate-500">
+                Loading more stories...
               </div>
-            </article>
 
-            <div v-if="isLoadingMore" class="py-5 text-center text-xs text-slate-500">
-              Loading another page of stories...
+              <div v-else-if="hasMore" class="py-5 text-center text-xs text-slate-500">
+                <p>Scroll down to load more stories.</p>
+                <button
+                  type="button"
+                  class="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-100 transition hover:border-cyan-300/25 hover:text-cyan-100"
+                  @click="loadMore"
+                >
+                  <Icon name="mdi:arrow-down-circle-outline" class="size-3.5" />
+                  Load more
+                </button>
+              </div>
+
+              <div v-if="hasMore" ref="feedBottomRef" class="h-px w-full" aria-hidden="true" />
             </div>
-
-            <div v-else-if="hasMore" class="py-5 text-center text-xs text-slate-500">
-              <p>Scroll down to continue loading the feed.</p>
-              <button
-                type="button"
-                class="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-100 transition hover:border-cyan-300/25 hover:text-cyan-100"
-                @click="loadMore"
-              >
-                <Icon name="mdi:arrow-down-circle-outline" class="size-3.5" />
-                Load next page
-              </button>
-            </div>
-
-            <div v-if="hasMore" ref="feedBottomRef" class="h-px w-full" aria-hidden="true" />
-          </div>
-        </section>
-      </template>
+          </section>
+        </template>
+      </header>
     </div>
 
     <aside
       class="xl:sticky xl:top-4 xl:max-h-[calc(100dvh-2rem)] xl:overflow-y-auto xl:pr-1 news-scrollbar"
     >
       <div class="space-y-2">
+        <!-- Stats + progress -->
         <section class="news-surface rounded-4xl p-4">
-          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Feed notes</p>
-          <h3 class="news-serif mt-2 text-lg font-semibold tracking-tight text-white">
-            One feed for the JS ecosystem
-          </h3>
-          <p class="mt-2 text-xs leading-5 text-slate-400/84">
-            Aggregates RSS from Nuxt, Vue, JavaScript Weekly, GitHub Blog, CSS-Tricks, Smashing
-            Magazine, dev.to, Medium, and Stack Overflow — then ranks each entry by keyword signal
-            and source quality before surfacing it here.
-          </p>
-
-          <div class="mt-3 grid gap-2">
-            <div class="rounded-xl border border-white/8 bg-white/4 p-3">
-              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Loaded</p>
-              <p class="mt-2 text-2xl font-semibold tracking-tight text-white">
-                {{ loadedItems.length }}
-              </p>
-              <p class="mt-1 text-xs leading-5 text-slate-400/84">stories currently rendered</p>
-            </div>
-            <div class="rounded-xl border border-white/8 bg-white/4 p-3">
-              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                How it works
-              </p>
-              <p class="mt-2 text-xs leading-5 text-slate-300/80">
-                The API fetches all configured RSS feeds in parallel, parses both RSS and Atom
-                formats, deduplicates by title, boosts high-quality content (architecture,
-                performance, deep dives), penalises beginner filler, and paginates the result.
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Overview</p>
+          <div class="mt-3 grid grid-cols-3 gap-2">
+            <div
+              v-for="stat in countStats"
+              :key="stat.label"
+              class="rounded-xl border border-white/8 bg-white/4 p-2.5 text-center"
+            >
+              <p class="text-2xl font-semibold tracking-tight text-white">{{ stat.value }}</p>
+              <p class="mt-0.5 text-xs font-medium uppercase tracking-wider text-slate-500">
+                {{ stat.label }}
               </p>
             </div>
           </div>
-        </section>
-
-        <section class="news-surface rounded-4xl p-4">
-          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">
-            Feed progress
-          </p>
-          <h3 class="news-serif mt-2 text-lg font-semibold tracking-tight text-white">
-            Stories loaded
-          </h3>
-
           <div class="mt-3 rounded-xl border border-white/8 bg-white/4 p-3">
-            <div class="flex items-center justify-between gap-3 text-xs text-slate-400/90">
-              <span>Loaded coverage</span>
+            <div class="flex items-center justify-between gap-2 text-xs">
+              <span class="text-slate-400">Loaded</span>
               <span class="font-semibold text-white">{{ loadedProgress }}%</span>
             </div>
-            <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-900/70">
+            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-900">
               <div
                 class="h-full rounded-full bg-[linear-gradient(90deg,rgba(34,211,238,0.92),rgba(251,191,36,0.9))] transition-[width] duration-500"
                 :style="{ width: `${loadedProgress}%` }"
               />
             </div>
-            <p class="mt-3 text-xs leading-5 text-slate-300/84">
+            <p class="mt-2 text-xs text-slate-500">
               {{ loadedItems.length }} of {{ totalItems || loadedItems.length }} stories loaded.
-            </p>
-            <p class="mt-1 text-xs leading-5 text-slate-500">
-              {{
-                remainingItems
-                  ? `${remainingItems} stories remain in later pages.`
-                  : "All available stories are loaded."
-              }}
+              <template v-if="remainingItems"> {{ remainingItems }} more in later pages. </template>
             </p>
           </div>
         </section>
 
         <section class="news-surface rounded-4xl p-4">
-          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Sources now</p>
-          <h3 class="news-serif mt-2 text-lg font-semibold tracking-tight text-white">
-            Most active publishers
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Sources</p>
+          <h3 class="news-serif mt-1.5 text-lg font-semibold tracking-tight text-white">
+            Most active
           </h3>
 
           <div class="mt-3 space-y-1.5">
@@ -1119,20 +1093,32 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
 
         <section class="news-surface rounded-4xl p-4">
           <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">RSS sources</p>
-          <h3 class="news-serif mt-2 text-lg font-semibold tracking-tight text-white">
+          <h3 class="news-serif mt-1.5 text-lg font-semibold tracking-tight text-white">
             Tracked publishers
           </h3>
-
-          <div class="mt-4 flex flex-wrap gap-2">
+          <div class="mt-3 flex flex-wrap gap-1.5">
             <span
               v-for="source in MONITORED_SOURCES"
               :key="source"
-              class="inline-flex items-center rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-slate-300/84"
+              class="inline-flex items-center rounded-full border border-white/8 bg-white/4 px-2.5 py-1 text-xs text-slate-300/84"
             >
               {{ source }}
             </span>
           </div>
         </section>
+
+        <!-- JSON API link -->
+        <div class="px-1">
+          <a
+            href="/api/news/tech"
+            target="_blank"
+            rel="noreferrer noopener"
+            class="flex items-center justify-center gap-2 rounded-3xl border border-white/8 bg-white/4 px-4 py-3 text-xs font-medium text-slate-300 transition hover:border-amber-300/30 hover:text-white"
+          >
+            <Icon name="mdi:api" class="size-4 text-amber-200/70" />
+            View raw JSON feed
+          </a>
+        </div>
       </div>
     </aside>
   </section>
