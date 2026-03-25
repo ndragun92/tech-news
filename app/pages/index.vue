@@ -60,6 +60,7 @@ const seenNewsLinks = useLocalStorage<string[]>("tech-news-seen-links", []);
 const activeFeedItem = ref<TechNewsItem | null>(null);
 const isLoadingMore = ref(false);
 const isRefreshing = ref(false);
+const selectedSource = ref<string | null>(null);
 
 const createEmptyResponse = (): TechNewsResponse => ({
   page: 1,
@@ -358,16 +359,26 @@ const hasMore = computed(() => {
   return currentPage.value < totalPages.value;
 });
 
+const availableSources = computed(() => {
+  const sources = [...new Set(loadedItems.value.map((item) => formatSource(item.sourceHost)))];
+  return sources.sort((a, b) => a.localeCompare(b));
+});
+
+const filteredItems = computed(() => {
+  if (!selectedSource.value) return loadedItems.value;
+  return loadedItems.value.filter((item) => formatSource(item.sourceHost) === selectedSource.value);
+});
+
 const featuredStory = computed(() => {
-  return loadedItems.value[0] ?? null;
+  return filteredItems.value[0] ?? null;
 });
 
 const sideStories = computed(() => {
-  return loadedItems.value.slice(1, 4);
+  return filteredItems.value.slice(1, 4);
 });
 
 const feedItems = computed(() => {
-  return loadedItems.value.slice(4);
+  return filteredItems.value.slice(4);
 });
 
 const todayCount = computed(() => {
@@ -552,6 +563,26 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
             <div
               class="flex w-full flex-wrap items-center gap-2 text-xs text-slate-300/76 sm:w-auto"
             >
+              <div class="relative flex-1 sm:flex-none">
+                <Icon
+                  name="mdi:filter-variant"
+                  class="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400"
+                />
+                <select
+                  v-model="selectedSource"
+                  class="w-full appearance-none rounded-full border border-white/10 bg-white/6 py-2 pl-8 pr-8 font-medium text-slate-100 transition hover:border-cyan-300/35 hover:bg-cyan-300/10 focus:outline-none sm:w-auto"
+                  style="background-color: #0b1220; color: #e2e8f0"
+                >
+                  <option :value="null">All sources</option>
+                  <option v-for="source in availableSources" :key="source" :value="source">
+                    {{ source }}
+                  </option>
+                </select>
+                <Icon
+                  name="mdi:chevron-down"
+                  class="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400"
+                />
+              </div>
               <button
                 type="button"
                 class="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-2 font-medium text-slate-100 transition hover:border-cyan-300/35 hover:bg-cyan-300/10 sm:flex-none"
@@ -778,10 +809,22 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
               </div>
             </div>
 
-            <div
-              class="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-slate-300/84"
-            >
-              Page {{ currentPage || 1 }} / {{ totalPages || 1 }}
+            <div class="flex flex-wrap items-center gap-2">
+              <button
+                v-if="selectedSource"
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/30 bg-cyan-300/12 px-3 py-1.5 text-xs font-medium text-cyan-100 transition hover:border-cyan-300/50 hover:bg-cyan-300/20"
+                @click="selectedSource = null"
+              >
+                <Icon name="mdi:filter-remove-outline" class="size-3.5" />
+                {{ selectedSource }}
+                <Icon name="mdi:close" class="size-3" />
+              </button>
+              <div
+                class="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-slate-300/84"
+              >
+                Page {{ currentPage || 1 }} / {{ totalPages || 1 }}
+              </div>
             </div>
           </div>
 
@@ -789,7 +832,12 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
             <div
               class="rounded-3xl border border-dashed border-white/10 bg-slate-950/55 px-4 py-8 text-center text-xs text-slate-400"
             >
-              More stories will appear here as the next page loads.
+              <template v-if="selectedSource">
+                No stories from
+                <span class="font-medium text-slate-200">{{ selectedSource }}</span> in the current
+                feed.
+              </template>
+              <template v-else> More stories will appear here as the next page loads. </template>
             </div>
           </div>
 
@@ -963,16 +1011,27 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
           </h3>
 
           <div class="mt-4 space-y-3">
-            <div
+            <button
               v-for="source in topSources"
               :key="source.label"
-              class="flex items-center justify-between gap-3 rounded-3xl border border-white/8 bg-white/4 px-4 py-1.5"
+              type="button"
+              class="flex w-full items-center justify-between gap-3 rounded-3xl border px-4 py-1.5 text-left transition"
+              :class="
+                selectedSource === source.label
+                  ? 'border-cyan-300/30 bg-cyan-300/12'
+                  : 'border-white/8 bg-white/4 hover:border-white/16 hover:bg-white/8'
+              "
+              @click="selectedSource = selectedSource === source.label ? null : source.label"
             >
-              <span class="text-xs font-medium text-slate-100">{{ source.label }}</span>
+              <span
+                class="text-xs font-medium"
+                :class="selectedSource === source.label ? 'text-cyan-100' : 'text-slate-100'"
+                >{{ source.label }}</span
+              >
               <span class="rounded-full bg-slate-900 px-2.5 py-1 text-xs text-slate-400">
                 {{ source.count }}
               </span>
-            </div>
+            </button>
           </div>
         </section>
 
