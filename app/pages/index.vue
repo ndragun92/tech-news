@@ -553,15 +553,17 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
 
 <template>
   <section
-    class="grid gap-3 pb-20 sm:gap-4 sm:pb-24 xl:min-h-[calc(100dvh-11.5rem)] xl:grid-cols-[minmax(0,1.62fr)_20rem] xl:items-start"
+    class="grid min-w-0 gap-3 pb-20 sm:gap-4 sm:pb-24 xl:min-h-[calc(100dvh-11.5rem)] xl:grid-cols-[minmax(0,1.62fr)_20rem] xl:items-start"
   >
-    <div class="space-y-3 sm:space-y-4">
+    <div class="min-w-0 space-y-3 sm:space-y-4">
       <header class="news-surface relative overflow-hidden rounded-4xl p-4 sm:p-6 space-y-2">
         <!-- Compact controls bar -->
         <div class="news-surface rounded-4xl px-4 py-3 sm:px-5">
-          <div class="flex flex-wrap items-center justify-between gap-3">
+          <div
+            class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
+          >
             <!-- Live stats chips -->
-            <div class="flex flex-wrap items-center gap-2 text-xs">
+            <div class="flex min-w-0 flex-wrap items-center gap-2 text-xs">
               <span
                 class="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-300/8 px-2.5 py-1 font-medium text-emerald-100"
               >
@@ -582,15 +584,15 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
               </span>
             </div>
             <!-- Controls -->
-            <div class="flex flex-wrap items-center gap-2 text-xs">
-              <div class="relative">
+            <div class="flex min-w-0 w-full flex-wrap items-center gap-2 text-xs sm:w-auto">
+              <div class="relative w-full sm:w-auto">
                 <Icon
                   name="mdi:filter-variant"
                   class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-slate-400"
                 />
                 <select
                   v-model="selectedSource"
-                  class="appearance-none rounded-full border border-white/10 bg-white/5 py-1.5 pl-7 pr-6 font-medium text-slate-100 transition hover:border-white/20 focus:outline-none"
+                  class="w-full max-w-full appearance-none rounded-full border border-white/10 bg-white/5 py-1.5 pl-7 pr-6 font-medium text-slate-100 transition hover:border-white/20 focus:outline-none sm:w-auto"
                   style="background-color: #0b1220; color: #e2e8f0"
                 >
                   <option :value="null">All sources</option>
@@ -607,7 +609,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                 type="button"
                 role="switch"
                 :aria-checked="showOnlyUnopened"
-                class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 font-medium transition"
+                class="inline-flex min-w-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 font-medium transition"
                 :class="
                   showOnlyUnopened
                     ? 'border-amber-300/35 bg-amber-300/12 text-amber-100'
@@ -623,7 +625,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
               </button>
               <button
                 type="button"
-                class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 font-medium text-slate-100 transition hover:border-white/20"
+                class="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 font-medium text-slate-100 transition hover:border-white/20"
                 @click="refreshNews"
               >
                 <Icon name="mdi:refresh" class="size-3.5" />
@@ -994,7 +996,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                     <Icon name="mdi:open-in-new" class="size-3.5" />
                     Open
                   </a>
-                  <span class="ml-auto text-slate-600">
+                  <span class="w-full text-slate-600 sm:ml-auto sm:w-auto sm:text-right">
                     {{ item.score }} pts · {{ formatAbsoluteDate(item.pubDate) }}
                   </span>
                 </div>
