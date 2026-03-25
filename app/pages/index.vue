@@ -573,17 +573,18 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="max-w-3xl space-y-3">
               <p class="text-xs font-semibold uppercase tracking-widest text-cyan-200/70">
-                Source tracker
+                Vue · Nuxt · Node.js · TypeScript
               </p>
               <div class="space-y-2">
                 <h1
                   class="news-serif max-w-3xl text-2xl font-semibold tracking-tight text-white sm:text-3xl"
                 >
-                  A focused dark feed for staying on top of the sources that matter.
+                  Ranked dev news for the Vue, Nuxt, and Node.js ecosystem.
                 </h1>
                 <p class="max-w-2xl text-sm text-slate-300/78">
-                  Updates are ranked, cleaned, and laid out for scanning fast. No geography, no
-                  filler, just the freshest stories from the tracked tech publications.
+                  Stories are pulled from 20+ RSS feeds across the Vue, Nuxt, Node.js, and
+                  TypeScript ecosystem — scored by relevance, deduplicated, and sorted by publish
+                  date.
                 </p>
               </div>
             </div>
@@ -1024,11 +1025,12 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
         <section class="news-surface rounded-4xl p-4">
           <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Feed notes</p>
           <h3 class="news-serif mt-2 text-lg font-semibold tracking-tight text-white">
-            Built for checking updates fast
+            One feed for the JS ecosystem
           </h3>
           <p class="mt-2 text-xs leading-5 text-slate-400/84">
-            The feed keeps the strongest story on top, pushes supporting items beside it, and leaves
-            the rest in a clean chronological scanline ranked by signal.
+            Aggregates RSS from Nuxt, Vue, JavaScript Weekly, GitHub Blog, CSS-Tricks, Smashing
+            Magazine, dev.to, Medium, and Stack Overflow — then ranks each entry by keyword signal
+            and source quality before surfacing it here.
           </p>
 
           <div class="mt-3 grid gap-2">
@@ -1040,10 +1042,13 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
               <p class="mt-1 text-xs leading-5 text-slate-400/84">stories currently rendered</p>
             </div>
             <div class="rounded-xl border border-white/8 bg-white/4 p-3">
-              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Pipeline</p>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                How it works
+              </p>
               <p class="mt-2 text-xs leading-5 text-slate-300/80">
-                The endpoint merges all configured feeds, removes duplicates, scores the results,
-                and paginates them for continuous reading.
+                The API fetches all configured RSS feeds in parallel, parses both RSS and Atom
+                formats, deduplicates by title, boosts high-quality content (architecture,
+                performance, deep dives), penalises beginner filler, and paginates the result.
               </p>
             </div>
           </div>
@@ -1051,10 +1056,10 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
 
         <section class="news-surface rounded-4xl p-4">
           <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">
-            Loading state
+            Feed progress
           </p>
           <h3 class="news-serif mt-2 text-lg font-semibold tracking-tight text-white">
-            Feed progress
+            Stories loaded
           </h3>
 
           <div class="mt-3 rounded-xl border border-white/8 bg-white/4 p-3">
@@ -1113,9 +1118,9 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
         </section>
 
         <section class="news-surface rounded-4xl p-4">
-          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Tracked set</p>
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">RSS sources</p>
           <h3 class="news-serif mt-2 text-lg font-semibold tracking-tight text-white">
-            Monitored sources
+            Tracked publishers
           </h3>
 
           <div class="mt-4 flex flex-wrap gap-2">
