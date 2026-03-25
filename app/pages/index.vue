@@ -603,11 +603,11 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
             </div>
           </div>
 
-          <div class="grid gap-3 sm:grid-cols-3">
+          <div class="grid gap-2.5 sm:grid-cols-3">
             <div
               v-for="stat in countStats"
               :key="stat.label"
-              class="rounded-3xl border border-white/8 bg-white/4 p-4"
+              class="rounded-xl border border-white/8 bg-white/4 p-3"
             >
               <p class="text-xs font-medium uppercase tracking-widest text-slate-400">
                 {{ stat.label }}
@@ -655,28 +655,28 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
           <div
             class="relative z-10 grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(15rem,0.65fr)] lg:items-start"
           >
-            <div class="space-y-5">
-              <div class="flex flex-wrap items-center gap-2 text-xs text-slate-300/76">
+            <div class="space-y-4">
+              <div class="flex flex-wrap items-center gap-1.5 text-xs text-slate-300/76">
                 <span
-                  class="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5 font-medium text-cyan-100"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1 font-medium text-cyan-100"
                 >
                   <Icon name="mdi:star-four-points-outline" class="size-3.5" />
                   Lead update
                 </span>
                 <span
-                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1"
                 >
                   <Icon name="mdi:newspaper-variant-outline" class="size-3.5" />
                   {{ formatSource(featuredStory.sourceHost) }}
                 </span>
                 <span
-                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1"
                 >
                   <Icon name="mdi:clock-outline" class="size-3.5" />
                   {{ formatRelativeDate(featuredStory.pubDate) }}
                 </span>
                 <span
-                  class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5"
+                  class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
                   :class="getReadStateClass(featuredStory)"
                 >
                   <Icon :name="getReadStateIcon(featuredStory)" class="size-3.5" />
@@ -684,7 +684,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                 </span>
                 <span
                   v-if="isItemFromToday(featuredStory)"
-                  class="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-1.5 text-emerald-100"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-emerald-100"
                 >
                   <Icon name="mdi:calendar-today" class="size-3.5" />
                   Fresh today
@@ -700,15 +700,15 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                 <HtmlContent v-if="leadSummary" :html="leadSummary" variant="lead" />
               </div>
 
-              <div class="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+              <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
                 <span
-                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1"
                 >
                   <Icon name="mdi:star-outline" class="size-3.5" />
                   Signal {{ featuredStory.score }}
                 </span>
                 <span
-                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-3 py-1.5"
+                  class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1"
                 >
                   <Icon name="mdi:calendar-range" class="size-3.5" />
                   {{ formatAbsoluteDate(featuredStory.pubDate) }}
@@ -741,7 +741,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
               <div
                 v-for="item in sideStories"
                 :key="item.link"
-                class="rounded-3xl p-4 transition hover:border-cyan-300/20 hover:bg-cyan-300/6"
+                class="rounded-xl p-3 transition hover:border-cyan-300/20 hover:bg-cyan-300/6"
                 :class="getItemShellClass(item)"
               >
                 <div
@@ -752,7 +752,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                     formatRelativeDate(item.pubDate)
                   }}</span>
                 </div>
-                <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-400">
                   <span
                     class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
                     :class="getReadStateClass(item)"
@@ -768,7 +768,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                     Fresh today
                   </span>
                 </div>
-                <button type="button" class="mt-3 text-left" @click="openFeedItem(item)">
+                <button type="button" class="mt-2 text-left" @click="openFeedItem(item)">
                   <span
                     class="news-serif text-lg leading-6 font-semibold transition hover:text-cyan-100"
                     :class="getItemTitleClass(item)"
@@ -779,7 +779,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                 <p class="mt-2 text-xs leading-5 text-slate-400/84">
                   {{ summarize(item.description, 120) }}
                 </p>
-                <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span>{{ item.score }} pts</span>
                   <span class="h-1 w-1 rounded-full bg-slate-700" />
                   <span>{{ formatAbsoluteDate(item.pubDate) }}</span>
@@ -789,8 +789,8 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
           </div>
         </article>
 
-        <section class="news-surface rounded-4xl p-5 sm:p-6">
-          <div class="flex flex-wrap items-end justify-between gap-4 border-b border-white/8 pb-4">
+        <section class="news-surface rounded-4xl p-4 sm:p-5">
+          <div class="flex flex-wrap items-end justify-between gap-4 border-b border-white/8 pb-3">
             <div class="space-y-2">
               <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">
                 Main feed
@@ -841,15 +841,15 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
             </div>
           </div>
 
-          <div v-else class="divide-y divide-white/8 pt-2 space-y-2">
+          <div v-else class="divide-y divide-white/8">
             <article
               v-for="item in feedItems"
               :key="item.link"
-              class="group grid gap-4 rounded-3xl px-4 py-5 transition lg:grid-cols-[minmax(0,1fr)_12rem] lg:gap-5"
+              class="group grid gap-3 rounded-xl px-4 py-4 transition lg:grid-cols-[minmax(0,1fr)_12rem] lg:gap-4"
               :class="getItemShellClass(item)"
             >
-              <div class="space-y-3">
-                <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <div class="space-y-2">
+                <div class="flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
                   <span
                     class="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/5 px-2.5 py-1"
                   >
@@ -944,7 +944,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
       class="xl:sticky xl:top-4 xl:max-h-[calc(100dvh-2rem)] xl:overflow-y-auto xl:pr-1 news-scrollbar"
     >
       <div class="space-y-2">
-        <section class="news-surface rounded-4xl p-5">
+        <section class="news-surface rounded-4xl p-4">
           <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Feed notes</p>
           <h3 class="news-serif mt-2 text-lg font-semibold tracking-tight text-white">
             Built for checking updates fast
@@ -954,15 +954,15 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
             the rest in a clean chronological scanline ranked by signal.
           </p>
 
-          <div class="mt-4 grid gap-3">
-            <div class="rounded-3xl border border-white/8 bg-white/4 p-4">
+          <div class="mt-3 grid gap-2">
+            <div class="rounded-xl border border-white/8 bg-white/4 p-3">
               <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Loaded</p>
               <p class="mt-2 text-2xl font-semibold tracking-tight text-white">
                 {{ loadedItems.length }}
               </p>
               <p class="mt-1 text-xs leading-5 text-slate-400/84">stories currently rendered</p>
             </div>
-            <div class="rounded-3xl border border-white/8 bg-white/4 p-4">
+            <div class="rounded-xl border border-white/8 bg-white/4 p-3">
               <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Pipeline</p>
               <p class="mt-2 text-xs leading-5 text-slate-300/80">
                 The endpoint merges all configured feeds, removes duplicates, scores the results,
@@ -972,7 +972,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
           </div>
         </section>
 
-        <section class="news-surface rounded-4xl p-5">
+        <section class="news-surface rounded-4xl p-4">
           <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">
             Loading state
           </p>
@@ -980,7 +980,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
             Feed progress
           </h3>
 
-          <div class="mt-4 rounded-3xl border border-white/8 bg-white/4 p-4">
+          <div class="mt-3 rounded-xl border border-white/8 bg-white/4 p-3">
             <div class="flex items-center justify-between gap-3 text-xs text-slate-400/90">
               <span>Loaded coverage</span>
               <span class="font-semibold text-white">{{ loadedProgress }}%</span>
@@ -1004,18 +1004,18 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
           </div>
         </section>
 
-        <section class="news-surface rounded-4xl p-5">
+        <section class="news-surface rounded-4xl p-4">
           <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Sources now</p>
           <h3 class="news-serif mt-2 text-lg font-semibold tracking-tight text-white">
             Most active publishers
           </h3>
 
-          <div class="mt-4 space-y-3">
+          <div class="mt-3 space-y-1.5">
             <button
               v-for="source in topSources"
               :key="source.label"
               type="button"
-              class="flex w-full items-center justify-between gap-3 rounded-3xl border px-4 py-1.5 text-left transition"
+              class="flex w-full items-center justify-between gap-3 rounded-lg border px-3.5 py-1.5 text-left transition"
               :class="
                 selectedSource === source.label
                   ? 'border-cyan-300/30 bg-cyan-300/12'
@@ -1035,7 +1035,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
           </div>
         </section>
 
-        <section class="news-surface rounded-4xl p-5">
+        <section class="news-surface rounded-4xl p-4">
           <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Tracked set</p>
           <h3 class="news-serif mt-2 text-lg font-semibold tracking-tight text-white">
             Monitored sources
@@ -1082,7 +1082,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
         class="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-4xl border border-white/10 bg-[linear-gradient(180deg,rgba(7,12,22,0.98),rgba(3,8,18,0.96))] shadow-[0_28px_90px_rgba(2,6,23,0.48)]"
       >
         <div
-          class="flex items-start justify-between gap-4 border-b border-white/8 px-5 py-5 sm:px-6"
+          class="flex items-start justify-between gap-4 border-b border-white/8 px-5 py-4 sm:px-6"
         >
           <div class="space-y-2">
             <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">
@@ -1126,15 +1126,15 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
             </span>
           </div>
 
-          <div class="mt-5 grid gap-3 sm:grid-cols-3">
-            <div class="rounded-3xl border border-white/8 bg-white/4 p-4">
+          <div class="mt-4 grid gap-2 sm:grid-cols-3">
+            <div class="rounded-xl border border-white/8 bg-white/4 p-3">
               <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Source</p>
               <p class="mt-2 text-sm font-medium text-white">
                 {{ formatSource(activeFeedItem.sourceHost) }}
               </p>
             </div>
             <div
-              class="rounded-3xl border p-4"
+              class="rounded-xl border p-3"
               :class="
                 isItemFromToday(activeFeedItem)
                   ? 'border-emerald-300/18 bg-emerald-300/8 text-emerald-100/88'
@@ -1154,7 +1154,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                 {{ formatRelativeDate(activeFeedItem.pubDate) }}
               </p>
             </div>
-            <div class="rounded-3xl border p-4" :class="getReadStateClass(activeFeedItem)">
+            <div class="rounded-xl border p-3" :class="getReadStateClass(activeFeedItem)">
               <p class="text-xs font-semibold uppercase tracking-wider">Read state</p>
               <p class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium">
                 <Icon :name="getReadStateIcon(activeFeedItem)" class="size-3.5" />
@@ -1162,7 +1162,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
               </p>
             </div>
             <div
-              class="rounded-3xl border border-white/8 bg-white/4 p-4 sm:col-span-3 lg:col-span-1"
+              class="rounded-xl border border-white/8 bg-white/4 p-3 sm:col-span-3 lg:col-span-1"
             >
               <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Feed signal
@@ -1171,7 +1171,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
             </div>
           </div>
 
-          <div class="mt-5 rounded-4xl border border-white/8 bg-white/4 p-5">
+          <div class="mt-4 rounded-2xl border border-white/8 bg-white/4 p-4">
             <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Summary</p>
             <HtmlContent
               v-if="activeFeedItemDescriptionHtml"
