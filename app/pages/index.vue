@@ -17,6 +17,7 @@ type TechNewsResponse = {
   limit: number;
   total: number;
   totalPages: number;
+  todayTotal: number;
   data: TechNewsItem[];
 };
 
@@ -56,17 +57,20 @@ const loadedItems = ref<TechNewsItem[]>([]);
 const currentPage = ref(0);
 const totalPages = ref(0);
 const totalItems = ref(0);
+const todayItems = ref(0);
 const seenNewsLinks = useLocalStorage<string[]>("tech-news-seen-links", []);
 const activeFeedItem = ref<TechNewsItem | null>(null);
 const isLoadingMore = ref(false);
 const isRefreshing = ref(false);
 const selectedSource = ref<string | null>(null);
+const showOnlyUnopened = ref(false);
 
 const createEmptyResponse = (): TechNewsResponse => ({
   page: 1,
   limit: PAGE_SIZE,
   total: 0,
   totalPages: 0,
+  todayTotal: 0,
   data: [],
 });
 
@@ -336,11 +340,18 @@ const closeFeedItem = () => {
   activeFeedItem.value = null;
 };
 
+const resolveTodayTotal = (response: Partial<TechNewsResponse>, fallbackValue = 0) => {
+  return typeof response.todayTotal === "number" && Number.isFinite(response.todayTotal)
+    ? response.todayTotal
+    : fallbackValue;
+};
+
 const syncResponse = (response: TechNewsResponse, mode: "replace" | "append" = "replace") => {
   loadedItems.value = mode === "append" ? [...loadedItems.value, ...response.data] : response.data;
   currentPage.value = response.page;
   totalPages.value = response.totalPages;
   totalItems.value = response.total;
+  todayItems.value = resolveTodayTotal(response, mode === "append" ? todayItems.value : 0);
 };
 
 watch(
@@ -365,8 +376,17 @@ const availableSources = computed(() => {
 });
 
 const filteredItems = computed(() => {
-  if (!selectedSource.value) return loadedItems.value;
-  return loadedItems.value.filter((item) => formatSource(item.sourceHost) === selectedSource.value);
+  return loadedItems.value.filter((item) => {
+    const matchesSource =
+      !selectedSource.value || formatSource(item.sourceHost) === selectedSource.value;
+    const matchesUnreadState = !showOnlyUnopened.value || !isItemSeen(item);
+
+    return matchesSource && matchesUnreadState;
+  });
+});
+
+const hasActiveFeedFilter = computed(() => {
+  return Boolean(selectedSource.value) || showOnlyUnopened.value;
 });
 
 const featuredStory = computed(() => {
@@ -381,9 +401,7 @@ const feedItems = computed(() => {
   return filteredItems.value.slice(4);
 });
 
-const todayCount = computed(() => {
-  return loadedItems.value.filter((item) => isItemFromToday(item)).length;
-});
+const todayCount = computed(() => todayItems.value);
 
 const unseenCount = computed(() => {
   return loadedItems.value.filter((item) => !isItemSeen(item)).length;
@@ -508,6 +526,16 @@ const refreshNews = async () => {
   }
 };
 
+watchEffect(() => {
+  if (!hasActiveFeedFilter.value || filteredItems.value.length || !hasMore.value) {
+    return;
+  }
+
+  if (!isLoadingMore.value) {
+    void loadMore();
+  }
+});
+
 useIntersectionObserver(
   feedBottomRef,
   ([entry]) => {
@@ -583,6 +611,24 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                   class="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400"
                 />
               </div>
+              <button
+                type="button"
+                role="switch"
+                :aria-checked="showOnlyUnopened"
+                class="inline-flex flex-1 items-center justify-center gap-2 rounded-full border px-3 py-2 font-medium transition sm:flex-none"
+                :class="
+                  showOnlyUnopened
+                    ? 'border-amber-300/35 bg-amber-300/12 text-amber-100'
+                    : 'border-white/10 bg-white/6 text-slate-100 hover:border-cyan-300/35 hover:bg-cyan-300/10'
+                "
+                @click="showOnlyUnopened = !showOnlyUnopened"
+              >
+                <Icon
+                  :name="showOnlyUnopened ? 'mdi:toggle-switch' : 'mdi:toggle-switch-off-outline'"
+                  class="size-4"
+                />
+                <span>{{ showOnlyUnopened ? "Only unopened" : "All read states" }}</span>
+              </button>
               <button
                 type="button"
                 class="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-2 font-medium text-slate-100 transition hover:border-cyan-300/35 hover:bg-cyan-300/10 sm:flex-none"
@@ -820,6 +866,16 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                 {{ selectedSource }}
                 <Icon name="mdi:close" class="size-3" />
               </button>
+              <button
+                v-if="showOnlyUnopened"
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-full border border-amber-300/35 bg-amber-300/12 px-3 py-1.5 text-xs font-medium text-amber-100 transition hover:border-amber-300/55 hover:bg-amber-300/20"
+                @click="showOnlyUnopened = false"
+              >
+                <Icon name="mdi:bookmark-remove-outline" class="size-3.5" />
+                Only unopened
+                <Icon name="mdi:close" class="size-3" />
+              </button>
               <div
                 class="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-slate-300/84"
               >
@@ -837,11 +893,32 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
                 <span class="font-medium text-slate-200">{{ selectedSource }}</span> in the current
                 feed.
               </template>
+              <template v-else-if="showOnlyUnopened">
+                No unopened stories match the current selection.
+              </template>
               <template v-else> More stories will appear here as the next page loads. </template>
             </div>
+
+            <div v-if="isLoadingMore" class="py-5 text-center text-xs text-slate-500">
+              Loading another page of stories...
+            </div>
+
+            <div v-else-if="hasMore" class="py-5 text-center text-xs text-slate-500">
+              <p>Scroll down to continue loading the feed.</p>
+              <button
+                type="button"
+                class="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-100 transition hover:border-cyan-300/25 hover:text-cyan-100"
+                @click="loadMore"
+              >
+                <Icon name="mdi:arrow-down-circle-outline" class="size-3.5" />
+                Load next page
+              </button>
+            </div>
+
+            <div v-if="hasMore" ref="feedBottomRef" class="h-px w-full" aria-hidden="true" />
           </div>
 
-          <div v-else class="divide-y divide-white/8">
+          <div v-else class="divide-y divide-white/8 space-y-2 mt-2">
             <article
               v-for="item in feedItems"
               :key="item.link"

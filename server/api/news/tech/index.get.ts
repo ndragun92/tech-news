@@ -243,11 +243,18 @@ export default defineCachedEventHandler(
     const end = start + limit;
     const paginated = items.slice(start, end);
 
+    const todayDateKey = new Date().toISOString().slice(0, 10);
+    const todayTotal = items.filter((item) => {
+      const ts = getPublishedAt(item.pubDate);
+      return ts ? new Date(ts).toISOString().slice(0, 10) === todayDateKey : false;
+    }).length;
+
     return {
       page,
       limit,
       total,
       totalPages: Math.ceil(total / limit),
+      todayTotal,
       data: paginated,
     };
   },
