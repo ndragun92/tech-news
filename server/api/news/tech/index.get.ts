@@ -259,7 +259,7 @@ export default defineCachedEventHandler(
     };
   },
   {
-    maxAge: 1000 * 60 * 60,
+    maxAge: 1000 * 60 * 30, // 30 minutes
     getKey: (event) => {
       const query = getQuery(event);
       return `tech-news:${query.page || 1}:${query.limit || 20}:${(query.filter as string | undefined)?.toLowerCase() || "all"}`;

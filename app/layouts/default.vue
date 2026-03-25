@@ -1,9 +1,7 @@
 <template>
   <main class="min-h-dvh overflow-x-clip px-3 py-3 sm:px-6 sm:py-4 lg:px-8">
     <div class="mx-auto max-w-384 space-y-4">
-      <header
-        class="news-surface relative overflow-hidden rounded-[2rem] px-4 py-4 sm:rounded-4xl sm:px-6"
-      >
+      <header class="news-surface relative overflow-hidden rounded-4xl px-4 py-4 sm:px-6">
         <div
           class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.15),transparent_22%),radial-gradient(circle_at_82%_18%,rgba(251,191,36,0.12),transparent_20%),linear-gradient(180deg,rgba(10,17,30,0.94),rgba(7,12,22,0.86))]"
         />
@@ -49,6 +47,12 @@
               <span class="text-emerald-100">Live feed</span>
             </span>
             <span
+              class="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5"
+            >
+              <Icon name="mdi:counter" class="size-3.5 text-cyan-100" />
+              <span class="text-cyan-100">{{ uniqueVisitCount }} visits</span>
+            </span>
+            <span
               class="hidden items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 sm:inline-flex"
             >
               <Icon name="mdi:calendar-today" class="size-3.5 text-amber-200" />
@@ -64,6 +68,48 @@
 </template>
 
 <script setup lang="ts">
+type VisitorStatsResponse = {
+  uniqueVisits: number;
+};
+
+const createEmptyVisitorStats = (): VisitorStatsResponse => ({
+  uniqueVisits: 0,
+});
+
+const { data: visitorStats, refresh: refreshVisitorStats } =
+  await useAsyncData<VisitorStatsResponse>(
+    "visitor-stats-navbar",
+    () => $fetch("/api/stats/visitors"),
+    {
+      server: false,
+      lazy: true,
+      default: createEmptyVisitorStats,
+    }
+  );
+
+let visitorStatsInterval: ReturnType<typeof setInterval> | null = null;
+
+onMounted(() => {
+  void refreshVisitorStats();
+
+  visitorStatsInterval = setInterval(() => {
+    void refreshVisitorStats();
+  }, 30_000);
+});
+
+onUnmounted(() => {
+  if (!visitorStatsInterval) {
+    return;
+  }
+
+  clearInterval(visitorStatsInterval);
+  visitorStatsInterval = null;
+});
+
+const uniqueVisitCount = computed(() => {
+  return Math.max(0, visitorStats.value?.uniqueVisits ?? 0);
+});
+
 const todayLabel = new Intl.DateTimeFormat("en", {
   weekday: "long",
   month: "long",

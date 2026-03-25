@@ -854,7 +854,11 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
               class="flex flex-wrap items-center justify-between gap-3 border-b border-white/8 px-5 py-4"
             >
               <div>
-                <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Feed</p>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">
+                    Live feed
+                  </p>
+                </div>
                 <h3 class="news-serif mt-1 text-xl font-semibold tracking-tight text-white">
                   Latest ranked updates
                 </h3>
@@ -1032,7 +1036,7 @@ useEventListener(document, "keydown", (event: KeyboardEvent) => {
         <!-- Stats + progress -->
         <section class="news-surface rounded-4xl p-4">
           <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Overview</p>
-          <div class="mt-3 grid grid-cols-3 gap-2">
+          <div class="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-3">
             <div
               v-for="stat in countStats"
               :key="stat.label"
