@@ -61,7 +61,11 @@ export default defineCachedEventHandler(
       }
     };
 
-    const parseItems = (response: string, source: string): FeedItem[] => {
+    const parseItems = (response: unknown, source: string): FeedItem[] => {
+      if (typeof response !== "string" || !response.trim()) {
+        return [];
+      }
+
       const isAtom = response.includes("<entry>");
       const sourceHost = getSourceHost(source);
 
@@ -206,6 +210,10 @@ export default defineCachedEventHandler(
           const response = await $fetch<string>(url, {
             responseType: "text",
           });
+
+          if (typeof response !== "string") {
+            return null;
+          }
 
           return {
             source: url,
